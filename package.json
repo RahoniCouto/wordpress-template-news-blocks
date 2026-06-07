@@ -1,0 +1,16 @@
+{
+  "name": "wordpress-template-news-blocks",
+  "version": "0.1.0",
+  "description": "Gutenberg blocks plugin criado para usar em conjunto com o template wordpress-template-news.",
+  "private": true,
+  "scripts": {
+    "build": "wp-scripts build",
+    "start": "wp-scripts start",
+    "format": "wp-scripts format",
+    "lint:js": "wp-scripts lint-js",
+    "packages-update": "wp-scripts packages-update"
+  },
+  "devDependencies": {
+    "@wordpress/scripts": "^30.0.0"
+  }
+}
