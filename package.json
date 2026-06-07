@@ -4,8 +4,8 @@
   "description": "Gutenberg blocks plugin criado para usar em conjunto com o template wordpress-template-news.",
   "private": true,
   "scripts": {
-    "build": "wp-scripts build",
-    "start": "wp-scripts start",
+    "build": "wp-scripts build --webpack-src-dir=src/blocks --output-path=build/blocks",
+    "start": "wp-scripts start --webpack-src-dir=src/blocks --output-path=build/blocks",
     "format": "wp-scripts format",
     "lint:js": "wp-scripts lint-js",
     "packages-update": "wp-scripts packages-update"
