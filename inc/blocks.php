@@ -10,13 +10,24 @@ if (! defined('ABSPATH')) {
 }
 
 /**
- * Registers plugin blocks.
+ * Registers all plugin blocks found in build/blocks.
  */
 function wtn_blocks_register_blocks(): void
 {
-    $editorial_hero_path = WTN_BLOCKS_PATH . 'build/blocks/editorial-hero';
+    $blocks_path = trailingslashit(WTN_BLOCKS_PATH) . 'build/blocks';
+    $block_files = glob($blocks_path . '/*/block.json');
 
-    if (file_exists($editorial_hero_path . '/block.json')) {
-        register_block_type($editorial_hero_path);
+    if (! is_array($block_files)) {
+        return;
+    }
+
+    sort($block_files);
+
+    foreach ($block_files as $block_file) {
+        if (! is_readable($block_file)) {
+            continue;
+        }
+
+        register_block_type(dirname($block_file));
     }
 }

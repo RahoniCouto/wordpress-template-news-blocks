@@ -1,0 +1,38 @@
+.editor-styles-wrapper {
+	.wtn-blocks-breaking-news {
+		&__editor-loading {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			min-height: 5rem;
+			border: 1px dashed #c3c4c7;
+			border-radius: 0.5rem;
+		}
+
+		&__inspector-help {
+			margin: 1rem 0 0;
+			color: #757575;
+			font-size: 0.8125rem;
+			line-height: 1.4;
+		}
+
+		&__headline {
+			box-sizing: border-box;
+			border-radius: 0.25rem;
+			outline: 1px solid transparent;
+			outline-offset: 0.2rem;
+
+			&:focus {
+				outline-color: var(--wp-admin-theme-color, #3858e9);
+			}
+		}
+
+		&__headline.block-editor-rich-text__editable {
+			margin: 0;
+		}
+
+		&__link {
+			cursor: text;
+		}
+	}
+}

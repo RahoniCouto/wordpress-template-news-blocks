@@ -1,0 +1,43 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "wtn-blocks/editorial-hero",
+  "version": "0.1.0",
+  "title": "Editorial Hero",
+  "category": "widgets",
+  "icon": "cover-image",
+  "description": "Bloco editorial de destaque para exibir uma matéria principal na Home.",
+  "textdomain": "wordpress-template-news-blocks",
+  "attributes": {
+    "postId": {
+      "type": "number",
+      "default": 0
+    },
+    "titleOverride": {
+      "type": "string",
+      "default": ""
+    },
+    "excerptOverride": {
+      "type": "string",
+      "default": ""
+    },
+    "imageOverrideId": {
+      "type": "number",
+      "default": 0
+    },
+    "mediaPosition": {
+      "type": "string",
+      "default": "left"
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": [
+      "wide"
+    ]
+  },
+  "editorScript": "file:./index.js",
+  "style": "file:./style-index.css",
+  "editorStyle": "file:./index.css",
+  "render": "file:./render.php"
+}
