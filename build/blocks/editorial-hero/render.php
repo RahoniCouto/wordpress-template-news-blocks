@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Editorial Hero block render.
  *
@@ -29,6 +30,13 @@ if (0 === $post_id) {
 $post = get_post($post_id);
 
 if (! $post instanceof WP_Post || 'post' !== $post->post_type || 'publish' !== get_post_status($post)) {
+    return;
+}
+
+if (
+    function_exists('wtn_blocks_is_post_used')
+    && wtn_blocks_is_post_used($post_id)
+) {
     return;
 }
 
@@ -75,6 +83,10 @@ if ($image_id > 0) {
     );
 }
 
+if (function_exists('wtn_blocks_register_used_post_id')) {
+    wtn_blocks_register_used_post_id($post_id);
+}
+
 $heading_tag = function_exists('wtn_blocks_get_next_editorial_heading_tag')
     ? wtn_blocks_get_next_editorial_heading_tag()
     : 'h2';
@@ -104,11 +116,13 @@ $wrapper_attributes = get_block_wrapper_attributes(
 );
 ?>
 
-<section <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+<section <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            ?>>
     <div class="wtn-blocks-editorial-hero__inner">
         <?php if ('' !== $image_html) : ?>
             <a class="wtn-blocks-editorial-hero__media" href="<?php echo esc_url($permalink); ?>">
-                <?php echo $image_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                <?php echo $image_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                ?>
             </a>
         <?php endif; ?>
 
@@ -133,16 +147,14 @@ $wrapper_attributes = get_block_wrapper_attributes(
                 <?php if ($primary_category instanceof WP_Term) : ?>
                     <a
                         class="wtn-blocks-editorial-hero__meta-item"
-                        href="<?php echo esc_url(get_category_link($primary_category)); ?>"
-                    >
+                        href="<?php echo esc_url(get_category_link($primary_category)); ?>">
                         <?php echo esc_html($primary_category->name); ?>
                     </a>
                 <?php endif; ?>
 
                 <time
                     class="wtn-blocks-editorial-hero__meta-item"
-                    datetime="<?php echo esc_attr(get_the_date(DATE_W3C, $post)); ?>"
-                >
+                    datetime="<?php echo esc_attr(get_the_date(DATE_W3C, $post)); ?>">
                     <?php echo esc_html(get_the_date('', $post)); ?>
                 </time>
             </div>

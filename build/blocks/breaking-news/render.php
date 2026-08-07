@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Breaking News block render.
  *
@@ -27,6 +28,13 @@ if (0 === $post_id) {
 $post = get_post($post_id);
 
 if (! $post instanceof WP_Post || 'post' !== $post->post_type || 'publish' !== get_post_status($post)) {
+    return;
+}
+
+if (
+    function_exists('wtn_blocks_is_post_used')
+    && wtn_blocks_is_post_used($post_id)
+) {
     return;
 }
 
@@ -62,6 +70,10 @@ if ($post_timestamp > 0) {
     );
 }
 
+if (function_exists('wtn_blocks_register_used_post_id')) {
+    wtn_blocks_register_used_post_id($post_id);
+}
+
 $heading_tag = function_exists('wtn_blocks_get_next_editorial_heading_tag')
     ? wtn_blocks_get_next_editorial_heading_tag()
     : 'h2';
@@ -79,7 +91,8 @@ $wrapper_attributes = get_block_wrapper_attributes(
 );
 ?>
 
-<section <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>>
+<section <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            ?>>
     <div class="wtn-blocks-breaking-news__inner">
         <div class="wtn-blocks-breaking-news__badge">
             <span class="wtn-blocks-breaking-news__icon" aria-hidden="true">⚡</span>
@@ -94,8 +107,7 @@ $wrapper_attributes = get_block_wrapper_attributes(
             <?php if ('' !== $time_label) : ?>
                 <time
                     class="wtn-blocks-breaking-news__time"
-                    datetime="<?php echo esc_attr(get_post_time(DATE_W3C, true, $post)); ?>"
-                >
+                    datetime="<?php echo esc_attr(get_post_time(DATE_W3C, true, $post)); ?>">
                     <?php echo esc_html($time_label); ?>
                 </time>
             <?php endif; ?>
