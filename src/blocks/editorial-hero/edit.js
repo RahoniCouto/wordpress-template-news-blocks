@@ -18,6 +18,7 @@ import { __ } from '@wordpress/i18n';
 
 import MediaOverrideControl from '../../components/media-override-control';
 import PostPicker from '../../components/post-picker';
+import usePreviousEditorialPostIds from '../../hooks/use-previous-editorial-post-ids';
 
 function stripTags(value = '') {
 	return value.replace(/<[^>]*>/g, '').trim();
@@ -48,7 +49,11 @@ function getImageUrl(media) {
 	);
 }
 
-export default function Edit({ attributes, setAttributes }) {
+export default function Edit({
+	attributes,
+	setAttributes,
+	clientId,
+}) {
 	const {
 		postId = 0,
 		titleOverride = '',
@@ -56,6 +61,10 @@ export default function Edit({ attributes, setAttributes }) {
 		imageOverrideId = 0,
 		mediaPosition = 'left',
 	} = attributes;
+
+	const previousEditorialPostIds = usePreviousEditorialPostIds(clientId);
+
+	const hasPostConflict = postId > 0 && previousEditorialPostIds.includes(Number(postId));
 
 	const { selectedPost, isResolvingPost } = useSelect(
 		(select) => {
@@ -125,6 +134,7 @@ export default function Edit({ attributes, setAttributes }) {
 			>
 				<PostPicker
 					value={postId}
+					excludePostIds={previousEditorialPostIds}
 					onChange={(nextPostId) => {
 						setAttributes({
 							postId: nextPostId,
@@ -134,6 +144,14 @@ export default function Edit({ attributes, setAttributes }) {
 						});
 					}}
 				/>
+				{hasPostConflict && (
+					<Notice status="warning" isDismissible={false}>
+						{__(
+							'Esta matéria já é utilizada por um bloco editorial anterior. No frontend, este Editorial Hero não será exibido enquanto houver o conflito.',
+							'wordpress-template-news-blocks'
+						)}
+					</Notice>
+				)}
 			</PanelBody>
 
 			<PanelBody
@@ -200,6 +218,7 @@ export default function Edit({ attributes, setAttributes }) {
 					>
 						<PostPicker
 							value={postId}
+							excludePostIds={previousEditorialPostIds}
 							onChange={(nextPostId) => {
 								setAttributes({ postId: nextPostId });
 							}}

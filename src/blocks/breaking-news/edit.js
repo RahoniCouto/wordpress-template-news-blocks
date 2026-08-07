@@ -17,6 +17,7 @@ import { decodeEntities } from '@wordpress/html-entities';
 import { __, _n, sprintf } from '@wordpress/i18n';
 
 import PostPicker from '../../components/post-picker';
+import usePreviousEditorialPostIds from '../../hooks/use-previous-editorial-post-ids';
 
 function stripTags(value = '') {
 	return value.replace(/<[^>]*>/g, '').trim();
@@ -81,12 +82,20 @@ function getRelativeTimeLabel(dateString) {
 	return dateI18n('j M • H\\hi', dateString);
 }
 
-export default function Edit({ attributes, setAttributes }) {
+export default function Edit({
+	attributes,
+	setAttributes,
+	clientId,
+}) {
 	const {
 		postId = 0,
 		titleOverride = '',
 		label = 'Breaking News',
 	} = attributes;
+
+	const previousEditorialPostIds = usePreviousEditorialPostIds(clientId);
+
+	const hasPostConflict = postId > 0 && previousEditorialPostIds.includes(Number(postId));
 
 	const { selectedPost, isResolvingPost } = useSelect(
 		(select) => {
@@ -130,6 +139,7 @@ export default function Edit({ attributes, setAttributes }) {
 				<PostPicker
 					label={__('Matéria do Breaking News', 'wordpress-template-news-blocks')}
 					value={postId}
+					excludePostIds={previousEditorialPostIds}
 					onChange={(nextPostId) => {
 						setAttributes({
 							postId: nextPostId,
@@ -137,6 +147,14 @@ export default function Edit({ attributes, setAttributes }) {
 						});
 					}}
 				/>
+				{hasPostConflict && (
+					<Notice status="warning" isDismissible={false}>
+						{__(
+							'Esta matéria já é utilizada por um bloco editorial anterior. No frontend, este Breaking News não será exibido enquanto houver o conflito.',
+							'wordpress-template-news-blocks'
+						)}
+					</Notice>
+				)}
 			</PanelBody>
 
 			<PanelBody
@@ -196,6 +214,7 @@ export default function Edit({ attributes, setAttributes }) {
 						<PostPicker
 							label={__('Matéria do Breaking News', 'wordpress-template-news-blocks')}
 							value={postId}
+							excludePostIds={previousEditorialPostIds}
 							onChange={(nextPostId) => {
 								setAttributes({ postId: nextPostId });
 							}}
