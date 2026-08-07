@@ -14,24 +14,62 @@ function getPostLabel(post) {
 	return decodeEntities(post.title.rendered);
 }
 
-export default function PostPicker({ value = 0, onChange, label }) {
+export default function PostPicker({
+	value = 0,
+	onChange,
+	label,
+	help,
+	categoryId = 0,
+	excludePostIds = [],
+}) {
 	const [searchTerm, setSearchTerm] = useState('');
 
 	const updateSearchTerm = useDebounce((nextSearchTerm) => {
 		setSearchTerm(nextSearchTerm);
 	}, 250);
 
-	const postsQuery = useMemo(
-		() => ({
+	const normalizedCategoryId = Number(categoryId) || 0;
+	const normalizedValue = Number(value) || 0;
+
+	const normalizedExcludedPostIds = useMemo(
+		() =>
+			[
+				...new Set(
+					excludePostIds
+						.map((postId) => Number(postId) || 0)
+						.filter(
+							(postId) =>
+								postId > 0 && postId !== normalizedValue
+						)
+				),
+			],
+		[excludePostIds, normalizedValue]
+	);
+
+	const postsQuery = useMemo(() => {
+		const query = {
 			per_page: 10,
 			search: searchTerm,
 			status: 'publish',
 			orderby: 'date',
 			order: 'desc',
 			_fields: 'id,title',
-		}),
-		[searchTerm]
-	);
+		};
+
+		if (normalizedCategoryId > 0) {
+			query.categories = [normalizedCategoryId];
+		}
+
+		if (normalizedExcludedPostIds.length > 0) {
+			query.exclude = normalizedExcludedPostIds;
+		}
+
+		return query;
+	}, [
+		searchTerm,
+		normalizedCategoryId,
+		normalizedExcludedPostIds,
+	]);
 
 	const { posts, selectedPost, isResolving } = useSelect(
 		(select) => {
@@ -40,8 +78,12 @@ export default function PostPicker({ value = 0, onChange, label }) {
 			return {
 				posts:
 					core.getEntityRecords('postType', 'post', postsQuery) || [],
-				selectedPost: value
-					? core.getEntityRecord('postType', 'post', value)
+				selectedPost: normalizedValue
+					? core.getEntityRecord(
+							'postType',
+							'post',
+							normalizedValue
+					  )
 					: null,
 				isResolving: core.isResolving('getEntityRecords', [
 					'postType',
@@ -50,7 +92,7 @@ export default function PostPicker({ value = 0, onChange, label }) {
 				]),
 			};
 		},
-		[postsQuery, value]
+		[postsQuery, normalizedValue]
 	);
 
 	const options = posts.map((post) => ({
@@ -60,7 +102,9 @@ export default function PostPicker({ value = 0, onChange, label }) {
 
 	if (
 		selectedPost &&
-		!options.some((option) => Number(option.value) === Number(value))
+		!options.some(
+			(option) => Number(option.value) === normalizedValue
+		)
 	) {
 		options.unshift({
 			value: String(selectedPost.id),
@@ -75,7 +119,7 @@ export default function PostPicker({ value = 0, onChange, label }) {
 					label ||
 					__('Matéria em destaque', 'wordpress-template-news-blocks')
 				}
-				value={value ? String(value) : ''}
+				value={normalizedValue ? String(normalizedValue) : ''}
 				options={options}
 				onChange={(nextValue) => {
 					onChange(nextValue ? Number(nextValue) : 0);
@@ -83,10 +127,13 @@ export default function PostPicker({ value = 0, onChange, label }) {
 				onFilterValueChange={(nextSearchTerm) => {
 					updateSearchTerm(nextSearchTerm || '');
 				}}
-				help={__(
-					'Busque e selecione manualmente a matéria que será exibida no bloco.',
-					'wordpress-template-news-blocks'
-				)}
+				help={
+					help ||
+					__(
+						'Busque e selecione manualmente a matéria que será exibida no bloco.',
+						'wordpress-template-news-blocks'
+					)
+				}
 			/>
 
 			{isResolving && (
