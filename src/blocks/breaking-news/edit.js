@@ -19,42 +19,43 @@ import { __, _n, sprintf } from '@wordpress/i18n';
 import PostPicker from '../../components/post-picker';
 import usePreviousEditorialPostIds from '../../hooks/use-previous-editorial-post-ids';
 
-function stripTags(value = '') {
-	return value.replace(/<[^>]*>/g, '').trim();
+function stripTags( value = '' ) {
+	return value.replace( /<[^>]*>/g, '' ).trim();
 }
 
-function getPostTitle(post) {
-	if (!post?.title?.rendered) {
-		return __('Matéria sem título', 'wordpress-template-news-blocks');
+function getPostTitle( post ) {
+	if ( ! post?.title?.rendered ) {
+		return __( 'Matéria sem título', 'wordpress-template-news-blocks' );
 	}
 
-	return decodeEntities(stripTags(post.title.rendered));
+	return decodeEntities( stripTags( post.title.rendered ) );
 }
 
-function getRelativeTimeLabel(dateString) {
-	if (!dateString) {
+function getRelativeTimeLabel( dateString ) {
+	if ( ! dateString ) {
 		return '';
 	}
 
-	const postDate = new Date(dateString);
+	const postDate = new Date( dateString );
 
-	if (Number.isNaN(postDate.getTime())) {
+	if ( Number.isNaN( postDate.getTime() ) ) {
 		return '';
 	}
 
 	const diffSeconds = Math.max(
 		0,
-		Math.floor((Date.now() - postDate.getTime()) / 1000)
+		Math.floor( ( Date.now() - postDate.getTime() ) / 1000 )
 	);
 
-	const diffMinutes = Math.floor(diffSeconds / 60);
+	const diffMinutes = Math.floor( diffSeconds / 60 );
 
-	if (diffMinutes < 1) {
-		return __('agora', 'wordpress-template-news-blocks');
+	if ( diffMinutes < 1 ) {
+		return __( 'agora', 'wordpress-template-news-blocks' );
 	}
 
-	if (diffMinutes < 60) {
+	if ( diffMinutes < 60 ) {
 		return sprintf(
+			/* translators: %d: quantidade de minutos desde a publicação. */
 			_n(
 				'há %d min',
 				'há %d min',
@@ -65,10 +66,11 @@ function getRelativeTimeLabel(dateString) {
 		);
 	}
 
-	const diffHours = Math.floor(diffMinutes / 60);
+	const diffHours = Math.floor( diffMinutes / 60 );
 
-	if (diffHours < 24) {
+	if ( diffHours < 24 ) {
 		return sprintf(
+			/* translators: %d: quantidade de horas desde a publicação. */
 			_n(
 				'há %d h',
 				'há %d h',
@@ -79,145 +81,154 @@ function getRelativeTimeLabel(dateString) {
 		);
 	}
 
-	return dateI18n('j M • H\\hi', dateString);
+	return dateI18n( 'j M • H\\hi', dateString );
 }
 
-export default function Edit({
-	attributes,
-	setAttributes,
-	clientId,
-}) {
+export default function Edit( { attributes, setAttributes, clientId } ) {
 	const {
 		postId = 0,
 		titleOverride = '',
 		label = 'Breaking News',
 	} = attributes;
 
-	const previousEditorialPostIds = usePreviousEditorialPostIds(clientId);
+	const previousEditorialPostIds = usePreviousEditorialPostIds( clientId );
 
-	const hasPostConflict = postId > 0 && previousEditorialPostIds.includes(Number(postId));
+	const hasPostConflict =
+		postId > 0 && previousEditorialPostIds.includes( Number( postId ) );
 
 	const { selectedPost, isResolvingPost } = useSelect(
-		(select) => {
-			const core = select(coreStore);
+		( select ) => {
+			const core = select( coreStore );
 
 			return {
 				selectedPost: postId
-					? core.getEntityRecord('postType', 'post', postId)
+					? core.getEntityRecord( 'postType', 'post', postId )
 					: null,
 				isResolvingPost: postId
-					? core.isResolving('getEntityRecord', [
+					? core.isResolving( 'getEntityRecord', [
 							'postType',
 							'post',
 							postId,
-					  ])
+					  ] )
 					: false,
 			};
 		},
-		[postId]
+		[ postId ]
 	);
 
-	const fallbackTitle = getPostTitle(selectedPost);
+	const fallbackTitle = getPostTitle( selectedPost );
 	const previewTitle = titleOverride.trim() || fallbackTitle;
 	const previewLabel =
-		label.trim() || __('Breaking News', 'wordpress-template-news-blocks');
+		label.trim() || __( 'Breaking News', 'wordpress-template-news-blocks' );
 
 	const formattedTime = selectedPost?.date
-		? getRelativeTimeLabel(selectedPost.date)
+		? getRelativeTimeLabel( selectedPost.date )
 		: '';
 
-	const blockProps = useBlockProps({
+	const blockProps = useBlockProps( {
 		className: 'wtn-blocks-breaking-news',
-	});
+	} );
 
 	const inspectorControls = (
 		<InspectorControls>
 			<PanelBody
-				title={__('Matéria', 'wordpress-template-news-blocks')}
+				title={ __( 'Matéria', 'wordpress-template-news-blocks' ) }
 				initialOpen
 			>
 				<PostPicker
-					label={__('Matéria do Breaking News', 'wordpress-template-news-blocks')}
-					value={postId}
-					excludePostIds={previousEditorialPostIds}
-					onChange={(nextPostId) => {
-						setAttributes({
+					label={ __(
+						'Matéria do Breaking News',
+						'wordpress-template-news-blocks'
+					) }
+					value={ postId }
+					excludePostIds={ previousEditorialPostIds }
+					onChange={ ( nextPostId ) => {
+						setAttributes( {
 							postId: nextPostId,
 							titleOverride: '',
-						});
-					}}
+						} );
+					} }
 				/>
-				{hasPostConflict && (
-					<Notice status="warning" isDismissible={false}>
-						{__(
+				{ hasPostConflict && (
+					<Notice status="warning" isDismissible={ false }>
+						{ __(
 							'Esta matéria já é utilizada por um bloco editorial anterior. No frontend, este Breaking News não será exibido enquanto houver o conflito.',
 							'wordpress-template-news-blocks'
-						)}
+						) }
 					</Notice>
-				)}
+				) }
 			</PanelBody>
 
 			<PanelBody
-				title={__('Texto do label', 'wordpress-template-news-blocks')}
-				initialOpen={false}
+				title={ __(
+					'Texto do label',
+					'wordpress-template-news-blocks'
+				) }
+				initialOpen={ false }
 			>
 				<TextControl
-					label={__('Label', 'wordpress-template-news-blocks')}
-					value={label}
-					onChange={(nextLabel) => {
-						setAttributes({
-							label: stripTags(nextLabel),
-						});
-					}}
-					help={__(
+					label={ __( 'Label', 'wordpress-template-news-blocks' ) }
+					value={ label }
+					onChange={ ( nextLabel ) => {
+						setAttributes( {
+							label: stripTags( nextLabel ),
+						} );
+					} }
+					help={ __(
 						'Texto curto exibido à esquerda da barra. Exemplo: Breaking News, Urgente ou Ao vivo.',
 						'wordpress-template-news-blocks'
-					)}
+					) }
 				/>
 			</PanelBody>
 
 			<PanelBody
-				title={__('Ajuda', 'wordpress-template-news-blocks')}
-				initialOpen={false}
+				title={ __( 'Ajuda', 'wordpress-template-news-blocks' ) }
+				initialOpen={ false }
 			>
 				<p className="wtn-blocks-breaking-news__inspector-help">
-					{__(
+					{ __(
 						'Edite a headline diretamente na prévia do bloco. O link e o tempo vêm da matéria selecionada.',
 						'wordpress-template-news-blocks'
-					)}
+					) }
 				</p>
 
 				<p className="wtn-blocks-breaking-news__inspector-help">
-					{__(
+					{ __(
 						'No frontend, a headline participa da hierarquia automática: o primeiro bloco editorial principal usa H1; os demais usam H2.',
 						'wordpress-template-news-blocks'
-					)}
+					) }
 				</p>
 			</PanelBody>
 		</InspectorControls>
 	);
 
-	if (!postId) {
+	if ( ! postId ) {
 		return (
 			<>
-				{inspectorControls}
+				{ inspectorControls }
 
-				<div {...blockProps}>
+				<div { ...blockProps }>
 					<Placeholder
 						icon="warning"
-						label={__('Breaking News', 'wordpress-template-news-blocks')}
-						instructions={__(
+						label={ __(
+							'Breaking News',
+							'wordpress-template-news-blocks'
+						) }
+						instructions={ __(
 							'Selecione manualmente a matéria que será exibida na barra de urgência.',
 							'wordpress-template-news-blocks'
-						)}
+						) }
 					>
 						<PostPicker
-							label={__('Matéria do Breaking News', 'wordpress-template-news-blocks')}
-							value={postId}
-							excludePostIds={previousEditorialPostIds}
-							onChange={(nextPostId) => {
-								setAttributes({ postId: nextPostId });
-							}}
+							label={ __(
+								'Matéria do Breaking News',
+								'wordpress-template-news-blocks'
+							) }
+							value={ postId }
+							excludePostIds={ previousEditorialPostIds }
+							onChange={ ( nextPostId ) => {
+								setAttributes( { postId: nextPostId } );
+							} }
 						/>
 					</Placeholder>
 				</div>
@@ -225,12 +236,12 @@ export default function Edit({
 		);
 	}
 
-	if (isResolvingPost && !selectedPost) {
+	if ( isResolvingPost && ! selectedPost ) {
 		return (
 			<>
-				{inspectorControls}
+				{ inspectorControls }
 
-				<div {...blockProps}>
+				<div { ...blockProps }>
 					<div className="wtn-blocks-breaking-news__editor-loading">
 						<Spinner />
 					</div>
@@ -239,17 +250,17 @@ export default function Edit({
 		);
 	}
 
-	if (!selectedPost) {
+	if ( ! selectedPost ) {
 		return (
 			<>
-				{inspectorControls}
+				{ inspectorControls }
 
-				<div {...blockProps}>
-					<Notice status="warning" isDismissible={false}>
-						{__(
+				<div { ...blockProps }>
+					<Notice status="warning" isDismissible={ false }>
+						{ __(
 							'A matéria selecionada não foi encontrada ou não está disponível.',
 							'wordpress-template-news-blocks'
-						)}
+						) }
 					</Notice>
 				</div>
 			</>
@@ -258,9 +269,9 @@ export default function Edit({
 
 	return (
 		<>
-			{inspectorControls}
+			{ inspectorControls }
 
-			<div {...blockProps}>
+			<div { ...blockProps }>
 				<div className="wtn-blocks-breaking-news__inner">
 					<div className="wtn-blocks-breaking-news__badge">
 						<span
@@ -271,7 +282,7 @@ export default function Edit({
 						</span>
 
 						<span className="wtn-blocks-breaking-news__label">
-							{previewLabel}
+							{ previewLabel }
 						</span>
 					</div>
 
@@ -279,25 +290,25 @@ export default function Edit({
 						<RichText
 							tagName="div"
 							className="wtn-blocks-breaking-news__headline"
-							value={previewTitle}
-							onChange={(nextTitle) => {
-								setAttributes({
-									titleOverride: stripTags(nextTitle),
-								});
-							}}
-							allowedFormats={[]}
+							value={ previewTitle }
+							onChange={ ( nextTitle ) => {
+								setAttributes( {
+									titleOverride: stripTags( nextTitle ),
+								} );
+							} }
+							allowedFormats={ [] }
 							disableLineBreaks
-							placeholder={__(
+							placeholder={ __(
 								'Escreva a headline do Breaking News',
 								'wordpress-template-news-blocks'
-							)}
+							) }
 						/>
 
-						{formattedTime && (
+						{ formattedTime && (
 							<span className="wtn-blocks-breaking-news__time">
-								{formattedTime}
+								{ formattedTime }
 							</span>
-						)}
+						) }
 
 						<span
 							className="wtn-blocks-breaking-news__cta"
