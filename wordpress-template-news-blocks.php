@@ -2,11 +2,10 @@
 
 /**
  * Plugin Name: WordPress Template News Blocks
- * Plugin URI: https://github.com/seu-usuario/wordpress-template-news-blocks
- * Description: Gutenberg blocks plugin criado para usar em conjunto com o template wordpress-template-news.
+ * Description: Blocos Gutenberg editoriais para o tema WordPress Template News.
  * Version: 0.1.0
- * Requires at least: 6.5
- * Requires PHP: 8.0
+ * Requires at least: 6.7
+ * Requires PHP: 8.1
  * Author: Rahoni Couto
  * Text Domain: wordpress-template-news-blocks
  *
