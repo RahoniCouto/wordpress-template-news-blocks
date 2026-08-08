@@ -1,0 +1,27 @@
+.wtn-blocks-editorial-post-slot {
+	display: grid;
+	gap: 0.75rem;
+	padding-top: 1rem;
+	border-top: 1px solid #ddd;
+
+	&__heading {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	&__source {
+		font-size: 0.75rem;
+		opacity: 0.65;
+	}
+
+	&__title {
+		margin: 0;
+	}
+
+	&__actions {
+		display: grid;
+		gap: 0.75rem;
+	}
+}
