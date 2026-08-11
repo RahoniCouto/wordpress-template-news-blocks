@@ -9,6 +9,8 @@
     #f8fafc
   );
 
+  container: wtn-news-section / inline-size;
+
   box-sizing: border-box;
   display: grid;
   gap: 1.5rem;
@@ -31,7 +33,7 @@
   &__header {
     display: flex;
     gap: 1rem;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     min-width: 0;
   }
@@ -43,13 +45,13 @@
   }
 
   &__section-title {
-    color: var(--wp--preset--color--primary, var(--wtn-color-primary, #0b5fff));
     min-width: 0;
     margin: 0;
-    font-size: clamp(1.375rem, 2vw, 1.75rem);
+    color: var(--wp--preset--color--primary, var(--wtn-color-primary, #0b5fff));
+    font-size: 1.375rem;
     font-weight: 800;
     letter-spacing: -0.025em;
-    line-height: 1.15;
+    line-height: 1.2;
     overflow-wrap: anywhere;
   }
 
@@ -127,7 +129,7 @@
     gap: 0.75rem;
     justify-content: center;
     min-width: 0;
-    padding: clamp(1.25rem, 3vw, 2.5rem);
+    padding: 1.25rem;
   }
 
   &__featured-category,
@@ -156,10 +158,10 @@
 
   &__featured-title {
     margin: 0;
-    font-size: clamp(1.5rem, 3vw, 2.25rem);
+    font-size: 1.5rem;
     font-weight: 800;
-    letter-spacing: -0.035em;
-    line-height: 1.1;
+    letter-spacing: -0.025em;
+    line-height: 1.3;
   }
 
   &__featured-excerpt {
@@ -195,17 +197,27 @@
 
   &__secondary-card {
     display: grid;
+    grid-template-columns:
+      minmax(7rem, 36%)
+      minmax(0, 1fr);
+  }
+
+  &__secondary-card--no-media {
+    grid-template-columns: 1fr;
   }
 
   &__secondary-media {
+    height: 100%;
     min-height: 7rem;
-    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    aspect-ratio: auto;
   }
 
   &__secondary-content {
     display: flex;
     flex-direction: column;
     gap: 0.55rem;
+    justify-content: center;
     min-width: 0;
     padding: 0.875rem;
   }
@@ -219,52 +231,17 @@
   }
 
   /*
-	 * Mobile.
-	 *
-	 * Os dois layouts convergem para:
-	 * - destaque empilhado;
-	 * - secundárias compactas;
-	 * - imagem à esquerda;
-	 * - conteúdo à direita.
-	 */
-  @media (max-width: 48.8125rem) {
+   * Compact container.
+   *
+   * Mantém os layouts editoriais de desktop, mas reduz
+   * a escala visual para containers intermediários,
+   * como a coluna principal de um layout 70 / 30.
+   */
+  @container wtn-news-section (min-width: 42rem) {
     &__header {
-      align-items: flex-start;
+      align-items: center;
     }
 
-    &__featured-content {
-      padding: 1.25rem;
-    }
-
-    &__secondary-card {
-      grid-template-columns:
-        minmax(7rem, 36%)
-        minmax(0, 1fr);
-    }
-
-    &__secondary-card--no-media {
-      grid-template-columns: 1fr;
-    }
-
-    &__secondary-media {
-      height: 100%;
-      min-height: 7rem;
-      aspect-ratio: auto;
-    }
-
-    &__secondary-content {
-      justify-content: center;
-    }
-  }
-
-  /*
-	 * Desktop.
-	 *
-	 * As três matérias secundárias permanecem em três colunas
-	 * nos dois layouts. O que muda é a composição interna
-	 * de cada card secundário.
-	 */
-  @media (min-width: 48.875rem) {
     &__featured-card {
       grid-template-columns:
         minmax(0, 0.82fr)
@@ -274,23 +251,18 @@
 
     &__featured-media {
       height: 100%;
-      min-height: 19rem;
+      min-height: 18rem;
       aspect-ratio: auto;
+    }
+
+    &__featured-content {
+      padding: 1.5rem;
     }
 
     &__secondary-list {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    /*
-		 * Layout 1.
-		 *
-		 * Destaque:
-		 * imagem esquerda / conteúdo direita.
-		 *
-		 * Secundárias:
-		 * imagem esquerda / conteúdo direita.
-		 */
     &--featured-media-left {
       .wtn-blocks-news-section {
         &__featured-media {
@@ -305,7 +277,7 @@
 
         &__secondary-card {
           grid-template-columns:
-            minmax(8rem, 44%)
+            minmax(7rem, 42%)
             minmax(0, 1fr);
         }
 
@@ -317,22 +289,9 @@
           height: 100%;
           aspect-ratio: auto;
         }
-
-        &__secondary-content {
-          justify-content: center;
-        }
       }
     }
 
-    /*
-		 * Layout 2.
-		 *
-		 * Destaque:
-		 * conteúdo esquerda / imagem direita.
-		 *
-		 * Secundárias:
-		 * imagem acima / conteúdo abaixo.
-		 */
     &--featured-media-right {
       .wtn-blocks-news-section {
         &__featured-card {
@@ -356,15 +315,12 @@
         }
 
         &__secondary-media {
+          height: auto;
           aspect-ratio: 16 / 7;
         }
       }
     }
 
-    /*
-		 * O destaque sem mídia não deve manter uma coluna vazia,
-		 * independentemente do layout escolhido.
-		 */
     &--featured-media-left,
     &--featured-media-right {
       .wtn-blocks-news-section {
@@ -375,6 +331,43 @@
         &__featured-card--no-media .wtn-blocks-news-section__featured-content {
           grid-column: 1;
           grid-row: 1;
+        }
+      }
+    }
+  }
+
+  /*
+   * Wide container.
+   *
+   * Recupera a escala editorial completa somente quando
+   * o próprio News Section possui largura suficiente.
+   */
+  @container wtn-news-section (min-width: 56rem) {
+    &__section-title {
+      font-size: clamp(1.375rem, 2vw, 1.75rem);
+      line-height: 1.15;
+    }
+
+    &__featured-media {
+      min-height: 19rem;
+    }
+
+    &__featured-content {
+      padding: clamp(1.25rem, 3vw, 2.5rem);
+    }
+
+    &__featured-title {
+      font-size: clamp(1.5rem, 3vw, 2.25rem);
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+    }
+
+    &--featured-media-left {
+      .wtn-blocks-news-section {
+        &__secondary-card {
+          grid-template-columns:
+            minmax(8rem, 44%)
+            minmax(0, 1fr);
         }
       }
     }
