@@ -1,0 +1,362 @@
+.wtn-blocks-latest-news {
+  --wtn-latest-news-color-text: var(--wp--preset--color--contrast, #111827);
+  --wtn-latest-news-color-muted: var(--wp--preset--color--muted, #64748b);
+  --wtn-latest-news-color-primary: var(--wp--preset--color--primary, #1d4ed8);
+  --wtn-latest-news-color-border: var(--wp--preset--color--border, #e2e8f0);
+  --wtn-latest-news-color-surface: var(--wp--preset--color--base, #ffffff);
+  --wtn-latest-news-color-media-background: var(
+    --wp--preset--color--base-2,
+    #f8fafc
+  );
+  --wtn-latest-news-columns: 4;
+
+  container: wtn-latest-news / inline-size;
+
+  box-sizing: border-box;
+  display: grid;
+  gap: 1.25rem;
+  width: 100%;
+  color: var(--wtn-latest-news-color-text);
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: inherit;
+  }
+
+  a {
+    &:focus-visible {
+      outline: 2px solid currentcolor;
+      outline-offset: 3px;
+    }
+  }
+
+  &--count-3 {
+    --wtn-latest-news-columns: 3;
+  }
+
+  &--count-4 {
+    --wtn-latest-news-columns: 4;
+  }
+
+  &--count-5 {
+    --wtn-latest-news-columns: 5;
+  }
+
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-items: flex-start;
+    justify-content: space-between;
+    min-width: 0;
+  }
+
+  &__section-title {
+    flex: 1 1 12rem;
+    min-width: 0;
+    margin: 0;
+    color: var(--wtn-latest-news-color-text);
+    font-size: 1.375rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  &__view-all {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    color: var(--wtn-latest-news-color-primary);
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+
+    &:hover,
+    &:focus {
+      text-decoration: underline;
+      text-decoration-thickness: 0.08em;
+      text-underline-offset: 0.18em;
+    }
+  }
+
+  &__items,
+  &__item,
+  &__content {
+    min-width: 0;
+  }
+
+  &__media {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    background: var(--wtn-latest-news-color-media-background);
+    text-decoration: none;
+  }
+
+  &__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 220ms ease;
+  }
+
+  &__media:hover &__image,
+  &__media:focus &__image {
+    transform: scale(1.015);
+  }
+
+  &__content {
+    min-width: 0;
+  }
+
+  &__category {
+    display: inline-block;
+    width: fit-content;
+    margin: 0;
+    color: var(--wtn-latest-news-color-primary);
+    font-size: 0.6875rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    text-decoration: none;
+    text-transform: uppercase;
+
+    &[href]:hover,
+    &[href]:focus {
+      text-decoration: underline;
+      text-decoration-thickness: 0.08em;
+      text-underline-offset: 0.18em;
+    }
+  }
+
+  &__title {
+    margin: 0;
+    color: var(--wtn-latest-news-color-text);
+    font-size: 1rem;
+    font-weight: 750;
+    letter-spacing: -0.015em;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+
+    a {
+      color: inherit;
+      text-decoration: none;
+
+      &:hover,
+      &:focus {
+        text-decoration: underline;
+        text-decoration-thickness: 0.08em;
+        text-underline-offset: 0.16em;
+      }
+    }
+  }
+
+  &__date {
+    display: block;
+    margin: 0;
+    color: var(--wtn-latest-news-color-muted);
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  /*
+   * Horizontal — NARROW.
+   *
+   * O layout continua sendo horizontal, mas os cards passam
+   * a ocupar uma coluna por linha quando o container é estreito.
+   */
+  &--horizontal {
+    .wtn-blocks-latest-news {
+      &__items {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1rem;
+      }
+
+      &__item {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid var(--wtn-latest-news-color-border);
+        border-radius: 0.625rem;
+        background: var(--wtn-latest-news-color-surface);
+      }
+
+      &__media {
+        width: 100%;
+        border-bottom: 1px solid var(--wtn-latest-news-color-border);
+        aspect-ratio: 16 / 9;
+      }
+
+      &__content {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        gap: 0.55rem;
+        padding: 0.875rem;
+      }
+
+      &__date {
+        margin-top: auto;
+      }
+    }
+  }
+
+  /*
+   * Vertical — NARROW.
+   */
+  &--vertical {
+    .wtn-blocks-latest-news {
+      &__items {
+        display: grid;
+        gap: 1rem;
+      }
+
+      &__item {
+        display: grid;
+        grid-template-columns:
+          6.5rem
+          minmax(0, 1fr);
+        gap: 1rem;
+        align-items: center;
+      }
+
+      &__item--no-media {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      &__media {
+        width: 100%;
+        overflow: hidden;
+        border-radius: 0.625rem;
+        aspect-ratio: 1;
+      }
+
+      &__content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.55rem;
+        justify-content: center;
+      }
+    }
+  }
+
+  /*
+   * COMPACT.
+   *
+   * A partir de 36rem o Horizontal passa para duas colunas.
+   */
+  @container wtn-latest-news (min-width: 36rem) {
+    &__header {
+      align-items: center;
+    }
+
+    &--horizontal {
+      .wtn-blocks-latest-news {
+        &__items {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        &__content {
+          padding: 1rem;
+        }
+      }
+    }
+
+    &--vertical {
+      .wtn-blocks-latest-news {
+        &__item {
+          grid-template-columns:
+            7.5rem
+            minmax(0, 1fr);
+        }
+
+        &__item--no-media {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        &__title {
+          font-size: 1.0625rem;
+        }
+      }
+    }
+  }
+
+  /*
+   * EXPANDED.
+   *
+   * A partir de 48rem já existe espaço suficiente para que
+   * Latest News com 3 ou 4 matérias utilize uma única linha.
+   *
+   * Cinco matérias permanecem em duas colunas até o estado Wide.
+   */
+  @container wtn-latest-news (min-width: 48rem) {
+    &--horizontal.wtn-blocks-latest-news--count-3,
+    &--horizontal.wtn-blocks-latest-news--count-4 {
+      .wtn-blocks-latest-news {
+        &__items {
+          grid-template-columns: repeat(
+            var(--wtn-latest-news-columns),
+            minmax(0, 1fr)
+          );
+        }
+
+        &__content {
+          padding: 0.875rem;
+        }
+      }
+    }
+  }
+
+  /*
+   * WIDE.
+   *
+   * A partir de 64rem todas as quantidades, incluindo cinco
+   * matérias, podem ocupar uma única linha.
+   */
+  @container wtn-latest-news (min-width: 64rem) {
+    &__section-title {
+      font-size: clamp(1.375rem, 2vw, 1.75rem);
+      line-height: 1.15;
+    }
+
+    &--horizontal {
+      .wtn-blocks-latest-news {
+        &__items {
+          grid-template-columns: repeat(
+            var(--wtn-latest-news-columns),
+            minmax(0, 1fr)
+          );
+        }
+
+        &__content {
+          padding: 0.875rem;
+        }
+      }
+    }
+
+    &--vertical {
+      .wtn-blocks-latest-news {
+        &__item {
+          grid-template-columns:
+            8.5rem
+            minmax(0, 1fr);
+        }
+
+        &__item--no-media {
+          grid-template-columns: minmax(0, 1fr);
+        }
+
+        &__title {
+          font-size: 1.125rem;
+          line-height: 1.3;
+        }
+      }
+    }
+  }
+}

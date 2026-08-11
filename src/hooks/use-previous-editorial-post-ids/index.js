@@ -34,6 +34,25 @@ function getNewsSectionPostIds( block ) {
 	return [ ...new Set( resolvedPostIds.filter( ( postId ) => postId > 0 ) ) ];
 }
 
+function getLatestNewsPostIds( block ) {
+	const configuredPostCount = Number( block.attributes?.postCount ) || 0;
+	const postCount = [ 3, 4, 5 ].includes( configuredPostCount )
+		? configuredPostCount
+		: 4;
+
+	const resolvedPostIds = Array.isArray( block.attributes?.resolvedPostIds )
+		? block.attributes.resolvedPostIds
+		: [];
+
+	return [
+		...new Set(
+			resolvedPostIds
+				.map( ( postId ) => Number( postId ) || 0 )
+				.filter( ( postId ) => postId > 0 )
+		),
+	].slice( 0, postCount );
+}
+
 function getEditorialPostIds( block ) {
 	switch ( block.name ) {
 		case 'wtn-blocks/editorial-hero':
@@ -45,6 +64,9 @@ function getEditorialPostIds( block ) {
 
 		case 'wtn-blocks/news-section':
 			return getNewsSectionPostIds( block );
+
+		case 'wtn-blocks/latest-news':
+			return getLatestNewsPostIds( block );
 
 		default:
 			return [];

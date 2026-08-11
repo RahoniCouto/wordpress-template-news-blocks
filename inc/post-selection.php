@@ -181,3 +181,71 @@ function wtn_blocks_resolve_news_section_posts(
 
     return $resolved_posts;
 }
+
+/**
+ * Resolves the posts used by a Latest News block.
+ *
+ * Latest News is exclusively automatic. It returns the newest eligible
+ * published posts that have not already been consumed by previous editorial
+ * blocks in the current render pass.
+ *
+ * The resolver only selects posts. It does not register them as consumed;
+ * registration belongs to the block render after the posts are actually used.
+ *
+ * @param int $category_id Optional category ID.
+ * @param int $post_count  Number of posts to resolve. Allowed values: 3, 4 or 5.
+ * @return array<int, int>
+ */
+function wtn_blocks_resolve_latest_news_posts(
+    int $category_id,
+    int $post_count
+): array {
+    $category_id = absint($category_id);
+
+    $post_count = in_array($post_count, [3, 4, 5], true)
+        ? $post_count
+        : 4;
+
+    $used_post_ids = function_exists('wtn_blocks_get_used_post_ids')
+        ? wtn_blocks_get_used_post_ids()
+        : [];
+
+    $used_post_ids = array_values(
+        array_unique(
+            array_filter(
+                array_map('absint', $used_post_ids)
+            )
+        )
+    );
+
+    $query_args = [
+        'post_type'              => 'post',
+        'post_status'            => 'publish',
+        'posts_per_page'         => $post_count,
+        'orderby' => [
+            'date' => 'DESC',
+            'ID'   => 'DESC',
+        ],
+        'ignore_sticky_posts'    => true,
+        'no_found_rows'          => true,
+        'update_post_meta_cache' => false,
+        'update_post_term_cache' => false,
+        'fields'                 => 'ids',
+    ];
+
+    if (! empty($used_post_ids)) {
+        $query_args['post__not_in'] = $used_post_ids;
+    }
+
+    if ($category_id > 0) {
+        $query_args['category__in'] = [$category_id];
+    }
+
+    $latest_news_query = new WP_Query($query_args);
+
+    return array_values(
+        array_filter(
+            array_map('absint', $latest_news_query->posts)
+        )
+    );
+}
