@@ -4,6 +4,8 @@ import { store as coreStore } from '@wordpress/core-data';
 import { useSelect } from '@wordpress/data';
 import { __ } from '@wordpress/i18n';
 
+import './editor.scss';
+
 const ALLOWED_MEDIA_TYPES = [ 'image' ];
 
 function getMediaImageUrl( media ) {
@@ -24,9 +26,14 @@ export default function MediaOverrideControl( {
 	imageClassName = '',
 	placeholderLabel,
 	placeholderHelp,
+	changeImageLabel,
 } ) {
 	const activeMediaId = value || fallbackMediaId || 0;
 	const isUsingOverride = value > 0;
+
+	const resolvedChangeImageLabel =
+		changeImageLabel ||
+		__( 'Alterar imagem', 'wordpress-template-news-blocks' );
 
 	const { media, isResolving } = useSelect(
 		( select ) => {
@@ -52,6 +59,7 @@ export default function MediaOverrideControl( {
 	);
 
 	const imageUrl = getMediaImageUrl( media );
+
 	const wrapperClassName = [
 		'wtn-blocks-media-override-control',
 		className,
@@ -84,10 +92,7 @@ export default function MediaOverrideControl( {
 									type="button"
 									className="wtn-blocks-media-override-control__trigger"
 									onClick={ open }
-									aria-label={ __(
-										'Alterar imagem do Hero',
-										'wordpress-template-news-blocks'
-									) }
+									aria-label={ resolvedChangeImageLabel }
 								>
 									<img
 										className={ [
@@ -101,10 +106,7 @@ export default function MediaOverrideControl( {
 									/>
 
 									<span className="wtn-blocks-media-override-control__overlay">
-										{ __(
-											'Alterar imagem',
-											'wordpress-template-news-blocks'
-										) }
+										{ resolvedChangeImageLabel }
 									</span>
 								</button>
 							);
@@ -119,7 +121,7 @@ export default function MediaOverrideControl( {
 								<span className="wtn-blocks-media-override-control__placeholder-title">
 									{ placeholderLabel ||
 										__(
-											'Escolher imagem para o Hero',
+											'Escolher imagem',
 											'wordpress-template-news-blocks'
 										) }
 								</span>

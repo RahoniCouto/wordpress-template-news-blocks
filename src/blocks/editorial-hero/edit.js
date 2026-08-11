@@ -1,8 +1,4 @@
-import {
-	InspectorControls,
-	RichText,
-	useBlockProps,
-} from '@wordpress/block-editor';
+import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
 import {
 	Notice,
 	PanelBody,
@@ -16,20 +12,24 @@ import { useSelect } from '@wordpress/data';
 import { decodeEntities } from '@wordpress/html-entities';
 import { __ } from '@wordpress/i18n';
 
+import EditorialTextOverrideControl from '../../components/editorial-text-override-control';
 import MediaOverrideControl from '../../components/media-override-control';
 import PostPicker from '../../components/post-picker';
 import usePreviousEditorialPostIds from '../../hooks/use-previous-editorial-post-ids';
-
-function stripTags( value = '' ) {
-	return value.replace( /<[^>]*>/g, '' ).trim();
-}
+import {
+	getPostOverride,
+	isPostOverrideEmpty,
+	normalizePostOverride,
+	sanitizeEditorialText,
+	updatePostOverrides,
+} from '../../utils/editorial-post-overrides';
 
 function getPostTitle( post ) {
 	if ( ! post?.title?.rendered ) {
 		return __( 'Matéria sem título', 'wordpress-template-news-blocks' );
 	}
 
-	return decodeEntities( stripTags( post.title.rendered ) );
+	return decodeEntities( sanitizeEditorialText( post.title.rendered ) );
 }
 
 function getPostExcerpt( post ) {
@@ -37,45 +37,78 @@ function getPostExcerpt( post ) {
 		return '';
 	}
 
-	return decodeEntities( stripTags( post.excerpt.rendered ) );
+	return decodeEntities( sanitizeEditorialText( post.excerpt.rendered ) );
 }
 
 export default function Edit( { attributes, setAttributes, clientId } ) {
 	const {
 		postId = 0,
+		postOverrides = {},
+		mediaPosition = 'left',
 		titleOverride = '',
 		excerptOverride = '',
 		imageOverrideId = 0,
-		mediaPosition = 'left',
 	} = attributes;
+
+	const normalizedPostId = Number( postId ) || 0;
+
+	const normalizedPostOverrides =
+		postOverrides &&
+		typeof postOverrides === 'object' &&
+		! Array.isArray( postOverrides )
+			? postOverrides
+			: {};
+
+	const legacyPostOverride = normalizePostOverride( {
+		titleOverride,
+		excerptOverride,
+		imageOverrideId,
+	} );
+
+	const hasStoredPostOverride =
+		normalizedPostId > 0 &&
+		Object.prototype.hasOwnProperty.call(
+			normalizedPostOverrides,
+			String( normalizedPostId )
+		);
+
+	const currentPostOverride = hasStoredPostOverride
+		? getPostOverride( normalizedPostOverrides, normalizedPostId )
+		: legacyPostOverride;
 
 	const previousEditorialPostIds = usePreviousEditorialPostIds( clientId );
 
 	const hasPostConflict =
-		postId > 0 && previousEditorialPostIds.includes( Number( postId ) );
+		normalizedPostId > 0 &&
+		previousEditorialPostIds.includes( normalizedPostId );
 
 	const { selectedPost, isResolvingPost } = useSelect(
 		( select ) => {
 			const core = select( coreStore );
 
 			return {
-				selectedPost: postId
-					? core.getEntityRecord( 'postType', 'post', postId )
+				selectedPost: normalizedPostId
+					? core.getEntityRecord(
+							'postType',
+							'post',
+							normalizedPostId
+					  )
 					: null,
-				isResolvingPost: postId
+				isResolvingPost: normalizedPostId
 					? core.isResolving( 'getEntityRecord', [
 							'postType',
 							'post',
-							postId,
+							normalizedPostId,
 					  ] )
 					: false,
 			};
 		},
-		[ postId ]
+		[ normalizedPostId ]
 	);
 
-	const featuredImageId = selectedPost?.featured_media || 0;
-	const categoryId = selectedPost?.categories?.[ 0 ] || 0;
+	const featuredImageId = Number( selectedPost?.featured_media ) || 0;
+
+	const categoryId = Number( selectedPost?.categories?.[ 0 ] ) || 0;
 
 	const category = useSelect(
 		( select ) => {
@@ -95,9 +128,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	const fallbackTitle = getPostTitle( selectedPost );
 	const fallbackExcerpt = getPostExcerpt( selectedPost );
 
-	const previewTitle = titleOverride.trim() || fallbackTitle;
-	const previewExcerpt = excerptOverride.trim() || fallbackExcerpt;
-
 	const formattedDate = selectedPost?.date
 		? dateI18n( getSettings().formats.date, selectedPost.date )
 		: '';
@@ -111,6 +141,53 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			.join( ' ' ),
 	} );
 
+	const migrateLegacyOverride = () => {
+		if (
+			normalizedPostId <= 0 ||
+			hasStoredPostOverride ||
+			isPostOverrideEmpty( legacyPostOverride )
+		) {
+			return normalizedPostOverrides;
+		}
+
+		return updatePostOverrides(
+			normalizedPostOverrides,
+			normalizedPostId,
+			legacyPostOverride
+		);
+	};
+
+	const handlePostChange = ( nextPostId ) => {
+		const normalizedNextPostId = Number( nextPostId ) || 0;
+
+		const nextPostOverrides = migrateLegacyOverride();
+
+		setAttributes( {
+			postId: normalizedNextPostId,
+			postOverrides: nextPostOverrides,
+			titleOverride: '',
+			excerptOverride: '',
+			imageOverrideId: 0,
+		} );
+	};
+
+	const updateCurrentPostOverride = ( nextPostOverride ) => {
+		if ( normalizedPostId <= 0 ) {
+			return;
+		}
+
+		setAttributes( {
+			postOverrides: updatePostOverrides(
+				normalizedPostOverrides,
+				normalizedPostId,
+				nextPostOverride
+			),
+			titleOverride: '',
+			excerptOverride: '',
+			imageOverrideId: 0,
+		} );
+	};
+
 	const inspectorControls = (
 		<InspectorControls>
 			<PanelBody
@@ -118,17 +195,11 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 				initialOpen
 			>
 				<PostPicker
-					value={ postId }
+					value={ normalizedPostId }
 					excludePostIds={ previousEditorialPostIds }
-					onChange={ ( nextPostId ) => {
-						setAttributes( {
-							postId: nextPostId,
-							titleOverride: '',
-							excerptOverride: '',
-							imageOverrideId: 0,
-						} );
-					} }
+					onChange={ handlePostChange }
 				/>
+
 				{ hasPostConflict && (
 					<Notice status="warning" isDismissible={ false }>
 						{ __(
@@ -166,7 +237,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						},
 					] }
 					onChange={ ( nextPosition ) => {
-						setAttributes( { mediaPosition: nextPosition } );
+						setAttributes( {
+							mediaPosition: nextPosition,
+						} );
 					} }
 					help={ __(
 						'No mobile, a imagem sempre aparece acima do conteúdo.',
@@ -196,7 +269,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		</InspectorControls>
 	);
 
-	if ( ! postId ) {
+	if ( ! normalizedPostId ) {
 		return (
 			<>
 				{ inspectorControls }
@@ -214,11 +287,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						) }
 					>
 						<PostPicker
-							value={ postId }
+							value={ normalizedPostId }
 							excludePostIds={ previousEditorialPostIds }
-							onChange={ ( nextPostId ) => {
-								setAttributes( { postId: nextPostId } );
-							} }
+							onChange={ handlePostChange }
 						/>
 					</Placeholder>
 				</div>
@@ -264,13 +335,21 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			<div { ...blockProps }>
 				<div className="wtn-blocks-editorial-hero__inner">
 					<MediaOverrideControl
-						value={ imageOverrideId }
+						value={ currentPostOverride.imageOverrideId }
 						fallbackMediaId={ featuredImageId }
-						onChange={ ( nextImageId ) => {
-							setAttributes( { imageOverrideId: nextImageId } );
+						onChange={ ( nextImageOverrideId ) => {
+							updateCurrentPostOverride( {
+								...currentPostOverride,
+								imageOverrideId:
+									Number( nextImageOverrideId ) || 0,
+							} );
 						} }
 						className="wtn-blocks-editorial-hero__media"
 						imageClassName="wtn-blocks-editorial-hero__image"
+						changeImageLabel={ __(
+							'Alterar imagem do Hero',
+							'wordpress-template-news-blocks'
+						) }
 						placeholderLabel={ __(
 							'Escolher imagem para o Hero',
 							'wordpress-template-news-blocks'
@@ -289,34 +368,34 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							) }
 						</p>
 
-						<RichText
+						<EditorialTextOverrideControl
 							tagName="div"
 							className="wtn-blocks-editorial-hero__title"
-							value={ previewTitle }
-							onChange={ ( nextTitle ) => {
-								setAttributes( {
-									titleOverride: stripTags( nextTitle ),
+							value={ currentPostOverride.titleOverride }
+							fallbackValue={ fallbackTitle }
+							onChange={ ( nextTitleOverride ) => {
+								updateCurrentPostOverride( {
+									...currentPostOverride,
+									titleOverride: nextTitleOverride,
 								} );
 							} }
-							allowedFormats={ [] }
-							disableLineBreaks
 							placeholder={ __(
 								'Escreva um título para o Hero',
 								'wordpress-template-news-blocks'
 							) }
 						/>
 
-						<RichText
+						<EditorialTextOverrideControl
 							tagName="p"
 							className="wtn-blocks-editorial-hero__excerpt"
-							value={ previewExcerpt }
-							onChange={ ( nextExcerpt ) => {
-								setAttributes( {
-									excerptOverride: stripTags( nextExcerpt ),
+							value={ currentPostOverride.excerptOverride }
+							fallbackValue={ fallbackExcerpt }
+							onChange={ ( nextExcerptOverride ) => {
+								updateCurrentPostOverride( {
+									...currentPostOverride,
+									excerptOverride: nextExcerptOverride,
 								} );
 							} }
-							allowedFormats={ [] }
-							disableLineBreaks
 							placeholder={ __(
 								'Escreva uma chamada para o Hero',
 								'wordpress-template-news-blocks'

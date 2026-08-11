@@ -1,34 +1,28 @@
-import {
-	InspectorControls,
-	RichText,
-	useBlockProps,
-} from '@wordpress/block-editor';
-import {
-	Notice,
-	PanelBody,
-	Placeholder,
-	Spinner,
-	TextControl,
-} from '@wordpress/components';
+import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
+import { Notice, PanelBody, Placeholder, Spinner } from '@wordpress/components';
 import { store as coreStore } from '@wordpress/core-data';
 import { dateI18n } from '@wordpress/date';
 import { useSelect } from '@wordpress/data';
 import { decodeEntities } from '@wordpress/html-entities';
 import { __, _n, sprintf } from '@wordpress/i18n';
 
+import EditorialTextOverrideControl from '../../components/editorial-text-override-control';
 import PostPicker from '../../components/post-picker';
 import usePreviousEditorialPostIds from '../../hooks/use-previous-editorial-post-ids';
-
-function stripTags( value = '' ) {
-	return value.replace( /<[^>]*>/g, '' ).trim();
-}
+import {
+	getPostOverride,
+	isPostOverrideEmpty,
+	normalizePostOverride,
+	sanitizeEditorialText,
+	updatePostOverrides,
+} from '../../utils/editorial-post-overrides';
 
 function getPostTitle( post ) {
 	if ( ! post?.title?.rendered ) {
 		return __( 'Matéria sem título', 'wordpress-template-news-blocks' );
 	}
 
-	return decodeEntities( stripTags( post.title.rendered ) );
+	return decodeEntities( sanitizeEditorialText( post.title.rendered ) );
 }
 
 function getRelativeTimeLabel( dateString ) {
@@ -87,47 +81,92 @@ function getRelativeTimeLabel( dateString ) {
 export default function Edit( { attributes, setAttributes, clientId } ) {
 	const {
 		postId = 0,
-		titleOverride = '',
+		postOverrides = {},
 		label = 'Breaking News',
+		titleOverride = '',
 	} = attributes;
+
+	const normalizedPostId = Number( postId ) || 0;
+
+	const normalizedPostOverrides =
+		postOverrides &&
+		typeof postOverrides === 'object' &&
+		! Array.isArray( postOverrides )
+			? postOverrides
+			: {};
 
 	const previousEditorialPostIds = usePreviousEditorialPostIds( clientId );
 
 	const hasPostConflict =
-		postId > 0 && previousEditorialPostIds.includes( Number( postId ) );
+		normalizedPostId > 0 &&
+		previousEditorialPostIds.includes( normalizedPostId );
 
 	const { selectedPost, isResolvingPost } = useSelect(
 		( select ) => {
 			const core = select( coreStore );
 
 			return {
-				selectedPost: postId
-					? core.getEntityRecord( 'postType', 'post', postId )
+				selectedPost: normalizedPostId
+					? core.getEntityRecord(
+							'postType',
+							'post',
+							normalizedPostId
+					  )
 					: null,
-				isResolvingPost: postId
+				isResolvingPost: normalizedPostId
 					? core.isResolving( 'getEntityRecord', [
 							'postType',
 							'post',
-							postId,
+							normalizedPostId,
 					  ] )
 					: false,
 			};
 		},
-		[ postId ]
+		[ normalizedPostId ]
 	);
-
-	const fallbackTitle = getPostTitle( selectedPost );
-	const previewTitle = titleOverride.trim() || fallbackTitle;
-	const previewLabel =
-		label.trim() || __( 'Breaking News', 'wordpress-template-news-blocks' );
-
-	const formattedTime = selectedPost?.date
-		? getRelativeTimeLabel( selectedPost.date )
-		: '';
 
 	const blockProps = useBlockProps( {
 		className: 'wtn-blocks-breaking-news',
 	} );
+
+	const migrateLegacyOverride = () => {
+		if ( normalizedPostId <= 0 ) {
+			return normalizedPostOverrides;
+		}
+
+		const hasStoredPostOverride = Object.prototype.hasOwnProperty.call(
+			normalizedPostOverrides,
+			String( normalizedPostId )
+		);
+
+		if ( hasStoredPostOverride ) {
+			return normalizedPostOverrides;
+		}
+
+		const legacyPostOverride = normalizePostOverride( {
+			titleOverride,
+		} );
+
+		if ( isPostOverrideEmpty( legacyPostOverride ) ) {
+			return normalizedPostOverrides;
+		}
+
+		return updatePostOverrides(
+			normalizedPostOverrides,
+			normalizedPostId,
+			legacyPostOverride
+		);
+	};
+
+	const handlePostChange = ( nextPostId ) => {
+		const normalizedNextPostId = Number( nextPostId ) || 0;
+
+		setAttributes( {
+			postId: normalizedNextPostId,
+			postOverrides: migrateLegacyOverride(),
+			titleOverride: '',
+		} );
+	};
 
 	const inspectorControls = (
 		<InspectorControls>
@@ -140,15 +179,11 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 						'Matéria do Breaking News',
 						'wordpress-template-news-blocks'
 					) }
-					value={ postId }
+					value={ normalizedPostId }
 					excludePostIds={ previousEditorialPostIds }
-					onChange={ ( nextPostId ) => {
-						setAttributes( {
-							postId: nextPostId,
-							titleOverride: '',
-						} );
-					} }
+					onChange={ handlePostChange }
 				/>
+
 				{ hasPostConflict && (
 					<Notice status="warning" isDismissible={ false }>
 						{ __(
@@ -160,34 +195,12 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			</PanelBody>
 
 			<PanelBody
-				title={ __(
-					'Texto do label',
-					'wordpress-template-news-blocks'
-				) }
-				initialOpen={ false }
-			>
-				<TextControl
-					label={ __( 'Label', 'wordpress-template-news-blocks' ) }
-					value={ label }
-					onChange={ ( nextLabel ) => {
-						setAttributes( {
-							label: stripTags( nextLabel ),
-						} );
-					} }
-					help={ __(
-						'Texto curto exibido à esquerda da barra. Exemplo: Breaking News, Urgente ou Ao vivo.',
-						'wordpress-template-news-blocks'
-					) }
-				/>
-			</PanelBody>
-
-			<PanelBody
 				title={ __( 'Ajuda', 'wordpress-template-news-blocks' ) }
 				initialOpen={ false }
 			>
 				<p className="wtn-blocks-breaking-news__inspector-help">
 					{ __(
-						'Edite a headline diretamente na prévia do bloco. O link e o tempo vêm da matéria selecionada.',
+						'Edite o label e a headline diretamente na prévia do bloco. O link e o tempo vêm da matéria selecionada.',
 						'wordpress-template-news-blocks'
 					) }
 				</p>
@@ -202,7 +215,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		</InspectorControls>
 	);
 
-	if ( ! postId ) {
+	if ( ! normalizedPostId ) {
 		return (
 			<>
 				{ inspectorControls }
@@ -224,11 +237,9 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 								'Matéria do Breaking News',
 								'wordpress-template-news-blocks'
 							) }
-							value={ postId }
+							value={ normalizedPostId }
 							excludePostIds={ previousEditorialPostIds }
-							onChange={ ( nextPostId ) => {
-								setAttributes( { postId: nextPostId } );
-							} }
+							onChange={ handlePostChange }
 						/>
 					</Placeholder>
 				</div>
@@ -267,6 +278,36 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		);
 	}
 
+	const hasStoredPostOverride = Object.prototype.hasOwnProperty.call(
+		normalizedPostOverrides,
+		String( normalizedPostId )
+	);
+
+	const legacyPostOverride = normalizePostOverride( {
+		titleOverride,
+	} );
+
+	const currentPostOverride = hasStoredPostOverride
+		? getPostOverride( normalizedPostOverrides, normalizedPostId )
+		: legacyPostOverride;
+
+	const fallbackTitle = getPostTitle( selectedPost );
+
+	const formattedTime = selectedPost.date
+		? getRelativeTimeLabel( selectedPost.date )
+		: '';
+
+	const updateCurrentPostOverride = ( nextPostOverride ) => {
+		setAttributes( {
+			postOverrides: updatePostOverrides(
+				normalizedPostOverrides,
+				normalizedPostId,
+				nextPostOverride
+			),
+			titleOverride: '',
+		} );
+	};
+
 	return (
 		<>
 			{ inspectorControls }
@@ -281,23 +322,38 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							⚡
 						</span>
 
-						<span className="wtn-blocks-breaking-news__label">
-							{ previewLabel }
-						</span>
+						<EditorialTextOverrideControl
+							tagName="span"
+							className="wtn-blocks-breaking-news__label"
+							value={ label }
+							fallbackValue={ __(
+								'Breaking News',
+								'wordpress-template-news-blocks'
+							) }
+							onChange={ ( nextLabel ) => {
+								setAttributes( {
+									label: nextLabel,
+								} );
+							} }
+							placeholder={ __(
+								'Breaking News',
+								'wordpress-template-news-blocks'
+							) }
+						/>
 					</div>
 
 					<div className="wtn-blocks-breaking-news__link">
-						<RichText
+						<EditorialTextOverrideControl
 							tagName="div"
 							className="wtn-blocks-breaking-news__headline"
-							value={ previewTitle }
-							onChange={ ( nextTitle ) => {
-								setAttributes( {
-									titleOverride: stripTags( nextTitle ),
+							value={ currentPostOverride.titleOverride }
+							fallbackValue={ fallbackTitle }
+							onChange={ ( nextTitleOverride ) => {
+								updateCurrentPostOverride( {
+									...currentPostOverride,
+									titleOverride: nextTitleOverride,
 								} );
 							} }
-							allowedFormats={ [] }
-							disableLineBreaks
 							placeholder={ __(
 								'Escreva a headline do Breaking News',
 								'wordpress-template-news-blocks'

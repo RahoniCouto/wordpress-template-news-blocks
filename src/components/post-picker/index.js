@@ -1,10 +1,12 @@
 import { ComboboxControl, Spinner } from '@wordpress/components';
+import { useDebounce } from '@wordpress/compose';
 import { store as coreStore } from '@wordpress/core-data';
 import { useSelect } from '@wordpress/data';
-import { useDebounce } from '@wordpress/compose';
 import { useMemo, useState } from '@wordpress/element';
 import { decodeEntities } from '@wordpress/html-entities';
 import { __ } from '@wordpress/i18n';
+
+import './editor.scss';
 
 function getPostLabel( post ) {
 	if ( ! post?.title?.rendered ) {

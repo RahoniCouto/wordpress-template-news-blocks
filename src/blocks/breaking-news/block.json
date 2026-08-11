@@ -13,13 +13,17 @@
       "type": "number",
       "default": 0
     },
-    "titleOverride": {
-      "type": "string",
-      "default": ""
+    "postOverrides": {
+      "type": "object",
+      "default": {}
     },
     "label": {
       "type": "string",
       "default": "Breaking News"
+    },
+    "titleOverride": {
+      "type": "string",
+      "default": ""
     }
   },
   "supports": {

@@ -1,0 +1,14 @@
+.wtn-blocks-editorial-text-override-control {
+  box-sizing: border-box;
+  border-radius: 0.25rem;
+  outline: 1px solid transparent;
+  outline-offset: 0.25rem;
+
+  &:focus {
+    outline-color: var(--wp-admin-theme-color, #3858e9);
+  }
+
+  &.block-editor-rich-text__editable {
+    margin: 0;
+  }
+}

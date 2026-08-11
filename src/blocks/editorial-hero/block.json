@@ -13,6 +13,14 @@
       "type": "number",
       "default": 0
     },
+    "postOverrides": {
+      "type": "object",
+      "default": {}
+    },
+    "mediaPosition": {
+      "type": "string",
+      "default": "left"
+    },
     "titleOverride": {
       "type": "string",
       "default": ""
@@ -24,10 +32,6 @@
     "imageOverrideId": {
       "type": "number",
       "default": 0
-    },
-    "mediaPosition": {
-      "type": "string",
-      "default": "left"
     }
   },
   "supports": {
