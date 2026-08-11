@@ -14,10 +14,16 @@ $block_attributes = wp_parse_args(
     $attributes ?? [],
     [
         'postId'          => 0,
+        'postOverrides'   => [],
+        'mediaPosition'   => 'left',
+
+        /*
+         * Legacy attributes kept temporarily for blocks created before
+         * postOverrides became the canonical editorial override model.
+         */
         'titleOverride'   => '',
         'excerptOverride' => '',
         'imageOverrideId' => 0,
-        'mediaPosition'   => 'left',
     ]
 );
 
@@ -29,7 +35,11 @@ if (0 === $post_id) {
 
 $post = get_post($post_id);
 
-if (! $post instanceof WP_Post || 'post' !== $post->post_type || 'publish' !== get_post_status($post)) {
+if (
+    ! $post instanceof WP_Post
+    || 'post' !== $post->post_type
+    || 'publish' !== get_post_status($post)
+) {
     return;
 }
 
@@ -40,29 +50,82 @@ if (
     return;
 }
 
-$media_position = in_array($block_attributes['mediaPosition'], ['left', 'right'], true)
+$permalink = get_permalink($post);
+
+if (
+    ! is_string($permalink)
+    || '' === $permalink
+) {
+    return;
+}
+
+$media_position = in_array(
+    $block_attributes['mediaPosition'],
+    ['left', 'right'],
+    true
+)
     ? $block_attributes['mediaPosition']
     : 'left';
 
-$permalink = get_permalink($post);
-$title = trim(wp_strip_all_tags((string) $block_attributes['titleOverride']));
-$excerpt = trim(wp_strip_all_tags((string) $block_attributes['excerptOverride']));
+$post_overrides = is_array($block_attributes['postOverrides'])
+    ? $block_attributes['postOverrides']
+    : [];
+
+$legacy_override = [
+    'titleOverride'   => $block_attributes['titleOverride'],
+    'excerptOverride' => $block_attributes['excerptOverride'],
+    'imageOverrideId' => $block_attributes['imageOverrideId'],
+];
+
+$post_override = wtn_blocks_get_editorial_post_override(
+    $post_overrides,
+    $post_id,
+    $legacy_override
+);
+
+$title = trim(
+    wp_strip_all_tags(
+        (string) $post_override['titleOverride']
+    )
+);
 
 if ('' === $title) {
-    $title = get_the_title($post);
+    $title = trim(
+        wp_strip_all_tags(
+            get_the_title($post)
+        )
+    );
 }
+
+if ('' === $title) {
+    $title = __(
+        'Matéria sem título',
+        'wordpress-template-news-blocks'
+    );
+}
+
+$excerpt = trim(
+    wp_strip_all_tags(
+        (string) $post_override['excerptOverride']
+    )
+);
 
 if ('' === $excerpt) {
-    $excerpt = get_the_excerpt($post);
+    $excerpt = trim(
+        wp_strip_all_tags(
+            get_the_excerpt($post)
+        )
+    );
 }
 
-$image_id = absint($block_attributes['imageOverrideId']);
+$image_id = absint($post_override['imageOverrideId']);
 
 if (0 === $image_id) {
     $image_id = (int) get_post_thumbnail_id($post);
 }
 
-$image_size = function_exists('has_image_size') && has_image_size('wtn-featured')
+$image_size = function_exists('has_image_size')
+    && has_image_size('wtn-featured')
     ? 'wtn-featured'
     : 'large';
 
@@ -83,6 +146,23 @@ if ($image_id > 0) {
     );
 }
 
+$categories = get_the_category($post_id);
+
+$primary_category = ! empty($categories)
+    && $categories[0] instanceof WP_Term
+    ? $categories[0]
+    : null;
+
+$primary_category_url = '';
+
+if ($primary_category instanceof WP_Term) {
+    $resolved_category_url = get_term_link($primary_category);
+
+    if (! is_wp_error($resolved_category_url)) {
+        $primary_category_url = $resolved_category_url;
+    }
+}
+
 if (function_exists('wtn_blocks_register_used_post_id')) {
     wtn_blocks_register_used_post_id($post_id);
 }
@@ -96,9 +176,6 @@ $heading_tag = function_exists('wtn_blocks_sanitize_heading_tag')
     : $heading_tag;
 
 $heading_tag = tag_escape($heading_tag);
-
-$categories = get_the_category($post_id);
-$primary_category = ! empty($categories) ? $categories[0] : null;
 
 $wrapper_classes = [
     'wtn-blocks-editorial-hero',
@@ -120,7 +197,9 @@ $wrapper_attributes = get_block_wrapper_attributes(
             ?>>
     <div class="wtn-blocks-editorial-hero__inner">
         <?php if ('' !== $image_html) : ?>
-            <a class="wtn-blocks-editorial-hero__media" href="<?php echo esc_url($permalink); ?>">
+            <a
+                class="wtn-blocks-editorial-hero__media"
+                href="<?php echo esc_url($permalink); ?>">
                 <?php echo $image_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                 ?>
             </a>
@@ -128,14 +207,19 @@ $wrapper_attributes = get_block_wrapper_attributes(
 
         <div class="wtn-blocks-editorial-hero__content">
             <p class="wtn-blocks-editorial-hero__eyebrow">
-                <?php esc_html_e('Destaque', 'wordpress-template-news-blocks'); ?>
+                <?php
+                esc_html_e(
+                    'Destaque',
+                    'wordpress-template-news-blocks'
+                );
+                ?>
             </p>
 
-            <<?php echo $heading_tag; ?> class="wtn-blocks-editorial-hero__title">
+            <<?php echo esc_html($heading_tag); ?> class="wtn-blocks-editorial-hero__title">
                 <a href="<?php echo esc_url($permalink); ?>">
                     <?php echo esc_html($title); ?>
                 </a>
-            </<?php echo $heading_tag; ?>>
+            </<?php echo esc_html($heading_tag); ?>>
 
             <?php if ('' !== $excerpt) : ?>
                 <p class="wtn-blocks-editorial-hero__excerpt">
@@ -145,11 +229,17 @@ $wrapper_attributes = get_block_wrapper_attributes(
 
             <div class="wtn-blocks-editorial-hero__meta">
                 <?php if ($primary_category instanceof WP_Term) : ?>
-                    <a
-                        class="wtn-blocks-editorial-hero__meta-item"
-                        href="<?php echo esc_url(get_category_link($primary_category)); ?>">
-                        <?php echo esc_html($primary_category->name); ?>
-                    </a>
+                    <?php if ('' !== $primary_category_url) : ?>
+                        <a
+                            class="wtn-blocks-editorial-hero__meta-item"
+                            href="<?php echo esc_url($primary_category_url); ?>">
+                            <?php echo esc_html($primary_category->name); ?>
+                        </a>
+                    <?php else : ?>
+                        <span class="wtn-blocks-editorial-hero__meta-item">
+                            <?php echo esc_html($primary_category->name); ?>
+                        </span>
+                    <?php endif; ?>
                 <?php endif; ?>
 
                 <time
