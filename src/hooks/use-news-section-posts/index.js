@@ -4,18 +4,8 @@ import { useMemo } from '@wordpress/element';
 
 const NEWS_SECTION_SLOT_COUNT = 4;
 
-function normalizePostIds( postIds = [], limit = null ) {
-	const normalizedPostIds = postIds.map(
-		( postId ) => Number( postId ) || 0
-	);
-
-	const uniquePostIds = [ ...new Set( normalizedPostIds ) ];
-
-	if ( limit === null ) {
-		return uniquePostIds;
-	}
-
-	return uniquePostIds.slice( 0, limit );
+function normalizePostIds( postIds = [] ) {
+	return [ ...new Set( postIds.map( ( postId ) => Number( postId ) || 0 ) ) ];
 }
 
 function normalizeSlotPostIds( slotPostIds = [] ) {
@@ -35,10 +25,30 @@ function isPostEligible( post, categoryId = 0 ) {
 	}
 
 	const postCategories = Array.isArray( post.categories )
-		? post.categories.map( ( termId ) => Number( termId ) )
+		? post.categories.map( ( termId ) => Number( termId ) || 0 )
 		: [];
 
 	return postCategories.includes( categoryId );
+}
+
+function sortPostsByDateAndId( posts = [] ) {
+	return [ ...posts ].sort( ( firstPost, secondPost ) => {
+		const firstDate =
+			typeof firstPost?.date === 'string' ? firstPost.date : '';
+
+		const secondDate =
+			typeof secondPost?.date === 'string' ? secondPost.date : '';
+
+		if ( firstDate !== secondDate ) {
+			return firstDate < secondDate ? 1 : -1;
+		}
+
+		const firstPostId = Number( firstPost?.id ) || 0;
+
+		const secondPostId = Number( secondPost?.id ) || 0;
+
+		return secondPostId - firstPostId;
+	} );
 }
 
 export default function useNewsSectionPosts( {
@@ -76,7 +86,8 @@ export default function useNewsSectionPosts( {
 			status: 'publish',
 			orderby: 'date',
 			order: 'desc',
-			_fields: 'id,title,status,categories',
+			_fields:
+				'id,title,excerpt,content,featured_media,status,categories,date,link',
 		};
 
 		const excludedIds = normalizePostIds( [
@@ -102,9 +113,11 @@ export default function useNewsSectionPosts( {
 			const excludedPostIdsSet = new Set( normalizedExcludedPostIds );
 
 			const seenManualPostIds = new Set();
+
 			const pendingManualSlots = new Set();
 
 			const resolvedPostIds = [ 0, 0, 0, 0 ];
+
 			const slotSources = [
 				'automatic',
 				'automatic',
@@ -140,7 +153,9 @@ export default function useNewsSectionPosts( {
 
 				if ( ! hasFinishedResolution && ! post ) {
 					pendingManualSlots.add( slotIndex );
+
 					isResolving = true;
+
 					return;
 				}
 
@@ -149,6 +164,7 @@ export default function useNewsSectionPosts( {
 				}
 
 				resolvedPostIds[ slotIndex ] = postId;
+
 				slotSources[ slotIndex ] = 'manual';
 			} );
 
@@ -161,8 +177,10 @@ export default function useNewsSectionPosts( {
 					automaticQuery,
 				];
 
-				automaticPosts =
+				const queriedPosts =
 					core.getEntityRecords( ...entityRecordsArgs ) || [];
+
+				automaticPosts = sortPostsByDateAndId( queriedPosts );
 
 				if (
 					! core.hasFinishedResolution(
@@ -188,7 +206,7 @@ export default function useNewsSectionPosts( {
 						return;
 					}
 
-					resolvedPostIds[ slotIndex ] = Number( nextPost.id );
+					resolvedPostIds[ slotIndex ] = Number( nextPost.id ) || 0;
 
 					slotSources[ slotIndex ] = 'automatic';
 				} );

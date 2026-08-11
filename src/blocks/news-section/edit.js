@@ -1,15 +1,29 @@
 import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
-import { PanelBody, Placeholder, RadioControl } from '@wordpress/components';
+import {
+	Notice,
+	PanelBody,
+	RadioControl,
+	Spinner,
+	TextControl,
+} from '@wordpress/components';
 import { store as coreStore } from '@wordpress/core-data';
-import { useEffect, useMemo } from '@wordpress/element';
+import { dateI18n, getSettings } from '@wordpress/date';
 import { useSelect } from '@wordpress/data';
+import { useEffect, useMemo } from '@wordpress/element';
 import { decodeEntities } from '@wordpress/html-entities';
-import { __ } from '@wordpress/i18n';
+import { __, _n, sprintf } from '@wordpress/i18n';
 
 import CategoryPicker from '../../components/category-picker';
+import EditorialPostSlotControl from '../../components/editorial-post-slot-control';
+import EditorialTextOverrideControl from '../../components/editorial-text-override-control';
+import MediaOverrideControl from '../../components/media-override-control';
 import useNewsSectionPosts from '../../hooks/use-news-section-posts';
 import usePreviousEditorialPostIds from '../../hooks/use-previous-editorial-post-ids';
-import EditorialPostSlotControl from '../../components/editorial-post-slot-control';
+import {
+	getPostOverride,
+	sanitizeEditorialText,
+	updatePostOverrides,
+} from '../../utils/editorial-post-overrides';
 
 const slotLabels = [
 	__( 'Destaque', 'wordpress-template-news-blocks' ),
@@ -25,32 +39,183 @@ function normalizeSlotPostIds( slotPostIds = [] ) {
 	);
 }
 
-function getPostTitle( post ) {
-	if ( ! post?.title?.rendered ) {
-		return __( 'Matéria não definida', 'wordpress-template-news-blocks' );
-	}
-
-	return decodeEntities( post.title.rendered );
-}
-
-function getResolvedPostLabel( post, isResolving ) {
-	if ( post ) {
-		return getPostTitle( post );
-	}
-
-	if ( isResolving ) {
-		return __( 'Carregando…', 'wordpress-template-news-blocks' );
-	}
-
-	return __( 'Não definida', 'wordpress-template-news-blocks' );
-}
-
 function arePostIdListsEqual( firstPostIds, secondPostIds ) {
 	const normalizedFirstPostIds = normalizeSlotPostIds( firstPostIds );
+
 	const normalizedSecondPostIds = normalizeSlotPostIds( secondPostIds );
 
 	return normalizedFirstPostIds.every(
 		( postId, slotIndex ) => postId === normalizedSecondPostIds[ slotIndex ]
+	);
+}
+
+function getPostTitle( post ) {
+	if ( ! post?.title?.rendered ) {
+		return __( 'Matéria sem título', 'wordpress-template-news-blocks' );
+	}
+
+	return decodeEntities( sanitizeEditorialText( post.title.rendered ) );
+}
+
+function getPostExcerpt( post ) {
+	if ( ! post?.excerpt?.rendered ) {
+		return '';
+	}
+
+	return decodeEntities( sanitizeEditorialText( post.excerpt.rendered ) );
+}
+
+function getReadingTimeLabel( post ) {
+	const renderedContent = post?.content?.rendered || '';
+
+	const content = decodeEntities( sanitizeEditorialText( renderedContent ) );
+
+	const words = content.match( /\p{L}+/gu ) || [];
+
+	const minutes = Math.max( 1, Math.ceil( words.length / 200 ) );
+
+	return sprintf(
+		/* translators: %d: estimated reading time in minutes. */
+		_n(
+			'%d min de leitura',
+			'%d min de leitura',
+			minutes,
+			'wordpress-template-news-blocks'
+		),
+		minutes
+	);
+}
+
+function NewsSectionPostEditor( {
+	post,
+	postId,
+	postOverride,
+	onChange,
+	variant,
+	sectionCategoryId,
+} ) {
+	const postCategoryId =
+		Number( sectionCategoryId ) || Number( post?.categories?.[ 0 ] ) || 0;
+
+	const category = useSelect(
+		( select ) => {
+			if ( ! postCategoryId ) {
+				return null;
+			}
+
+			return select( coreStore ).getEntityRecord(
+				'taxonomy',
+				'category',
+				postCategoryId
+			);
+		},
+		[ postCategoryId ]
+	);
+
+	if ( ! post || ! postId ) {
+		return null;
+	}
+
+	const isFeatured = variant === 'featured';
+
+	const classPrefix = isFeatured
+		? 'wtn-blocks-news-section__featured'
+		: 'wtn-blocks-news-section__secondary';
+
+	const featuredImageId = Number( post.featured_media ) || 0;
+
+	const fallbackTitle = getPostTitle( post );
+	const fallbackExcerpt = getPostExcerpt( post );
+
+	const formattedDate = post.date
+		? dateI18n( getSettings().formats.date, post.date )
+		: '';
+
+	const readingTime = getReadingTimeLabel( post );
+
+	return (
+		<article className={ `${ classPrefix }-card` }>
+			<MediaOverrideControl
+				value={ postOverride.imageOverrideId }
+				fallbackMediaId={ featuredImageId }
+				onChange={ ( nextImageOverrideId ) => {
+					onChange( {
+						...postOverride,
+						imageOverrideId: Number( nextImageOverrideId ) || 0,
+					} );
+				} }
+				className={ `${ classPrefix }-media` }
+				imageClassName={ `${ classPrefix }-image` }
+				changeImageLabel={ __(
+					'Alterar imagem da matéria',
+					'wordpress-template-news-blocks'
+				) }
+				placeholderLabel={ __(
+					'Escolher imagem para a matéria',
+					'wordpress-template-news-blocks'
+				) }
+				placeholderHelp={ __(
+					'Esta matéria não possui imagem destacada. Escolha uma imagem customizada para esta ocorrência editorial.',
+					'wordpress-template-news-blocks'
+				) }
+			/>
+
+			<div className={ `${ classPrefix }-content` }>
+				{ category?.name && (
+					<span className={ `${ classPrefix }-category` }>
+						{ decodeEntities( category.name ) }
+					</span>
+				) }
+
+				<EditorialTextOverrideControl
+					tagName="div"
+					className={ `${ classPrefix }-title` }
+					value={ postOverride.titleOverride }
+					fallbackValue={ fallbackTitle }
+					onChange={ ( nextTitleOverride ) => {
+						onChange( {
+							...postOverride,
+							titleOverride: nextTitleOverride,
+						} );
+					} }
+					placeholder={ __(
+						'Escreva um título',
+						'wordpress-template-news-blocks'
+					) }
+				/>
+
+				{ isFeatured && (
+					<EditorialTextOverrideControl
+						tagName="p"
+						className={ `${ classPrefix }-excerpt` }
+						value={ postOverride.excerptOverride }
+						fallbackValue={ fallbackExcerpt }
+						onChange={ ( nextExcerptOverride ) => {
+							onChange( {
+								...postOverride,
+								excerptOverride: nextExcerptOverride,
+							} );
+						} }
+						placeholder={ __(
+							'Escreva uma chamada',
+							'wordpress-template-news-blocks'
+						) }
+					/>
+				) }
+
+				<div className={ `${ classPrefix }-meta` }>
+					{ formattedDate && (
+						<span className={ `${ classPrefix }-meta-item` }>
+							{ formattedDate }
+						</span>
+					) }
+
+					<span className={ `${ classPrefix }-meta-item` }>
+						{ readingTime }
+					</span>
+				</div>
+			</div>
+		</article>
 	);
 }
 
@@ -59,15 +224,28 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		categoryId = 0,
 		selectionMode = 'automatic',
 		layoutVariant = 'featured-media-left',
+		titleOverride = '',
+		viewAllLabelOverride = '',
+		viewAllUrlOverride = '',
 		slotPostIds = [ 0, 0, 0, 0 ],
+		postOverrides = {},
 		resolvedPostIds: localResolvedPostIds = [ 0, 0, 0, 0 ],
 	} = attributes;
 
 	const normalizedCategoryId = Number( categoryId ) || 0;
+
 	const normalizedSlotPostIds = useMemo(
 		() => normalizeSlotPostIds( slotPostIds ),
 		[ slotPostIds ]
 	);
+
+	const normalizedPostOverrides =
+		postOverrides &&
+		typeof postOverrides === 'object' &&
+		! Array.isArray( postOverrides )
+			? postOverrides
+			: {};
+
 	const previousEditorialPostIds = usePreviousEditorialPostIds( clientId );
 
 	const configuredSlotPosts = useSelect(
@@ -136,7 +314,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	} = useNewsSectionPosts( {
 		categoryId: normalizedCategoryId,
 		selectionMode,
-		slotPostIds,
+		slotPostIds: normalizedSlotPostIds,
 		excludePostIds: previousEditorialPostIds,
 	} );
 
@@ -179,7 +357,23 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		),
 	];
 
-	const category = useSelect(
+	const handlePostOverrideChange = ( postId, nextPostOverride ) => {
+		const normalizedPostId = Number( postId ) || 0;
+
+		if ( ! normalizedPostId ) {
+			return;
+		}
+
+		setAttributes( {
+			postOverrides: updatePostOverrides(
+				normalizedPostOverrides,
+				normalizedPostId,
+				nextPostOverride
+			),
+		} );
+	};
+
+	const sectionCategory = useSelect(
 		( select ) => {
 			if ( ! normalizedCategoryId ) {
 				return null;
@@ -194,19 +388,26 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		[ normalizedCategoryId ]
 	);
 
-	const categoryLabel = category?.name
-		? decodeEntities( category.name )
-		: __( 'Sem categoria', 'wordpress-template-news-blocks' );
+	const categoryTitle = sectionCategory?.name
+		? decodeEntities( sectionCategory.name )
+		: '';
 
-	const selectionModeLabel =
-		selectionMode === 'manual'
-			? __( 'Manual', 'wordpress-template-news-blocks' )
-			: __( 'Automática', 'wordpress-template-news-blocks' );
+	const categoryUrl = sectionCategory?.link || '';
 
-	const layoutLabel =
-		layoutVariant === 'featured-media-right'
-			? __( 'Layout 2', 'wordpress-template-news-blocks' )
-			: __( 'Layout 1', 'wordpress-template-news-blocks' );
+	const resolvedViewAllUrl = viewAllUrlOverride.trim() || categoryUrl;
+
+	const defaultViewAllLabel = __(
+		'Ver todas',
+		'wordpress-template-news-blocks'
+	);
+
+	const featuredPostId = computedResolvedPostIds[ 0 ] || 0;
+
+	const featuredPost = resolvedPosts[ 0 ] || null;
+
+	const secondaryPostIds = computedResolvedPostIds.slice( 1, 4 );
+
+	const secondaryPosts = resolvedPosts.slice( 1, 4 );
 
 	const blockProps = useBlockProps( {
 		className: [
@@ -217,221 +418,310 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 			.join( ' ' ),
 	} );
 
+	const inspectorControls = (
+		<InspectorControls>
+			<PanelBody
+				title={ __(
+					'Configuração da seção',
+					'wordpress-template-news-blocks'
+				) }
+				initialOpen
+			>
+				<CategoryPicker
+					value={ normalizedCategoryId }
+					onChange={ handleCategoryChange }
+				/>
+
+				<p className="wtn-blocks-news-section__inspector-help">
+					{ __(
+						'O título da seção pode ser editado diretamente na prévia do bloco.',
+						'wordpress-template-news-blocks'
+					) }
+				</p>
+			</PanelBody>
+
+			<PanelBody
+				title={ __(
+					'Link “Ver todas”',
+					'wordpress-template-news-blocks'
+				) }
+				initialOpen={ false }
+			>
+				<TextControl
+					label={ __( 'URL', 'wordpress-template-news-blocks' ) }
+					type="url"
+					value={ viewAllUrlOverride }
+					placeholder={ categoryUrl }
+					onChange={ ( nextUrl ) => {
+						setAttributes( {
+							viewAllUrlOverride: nextUrl,
+						} );
+					} }
+					help={
+						normalizedCategoryId
+							? __(
+									'Deixe vazio para usar automaticamente o link da categoria.',
+									'wordpress-template-news-blocks'
+							  )
+							: __(
+									'Sem categoria, informe uma URL para exibir o link.',
+									'wordpress-template-news-blocks'
+							  )
+					}
+				/>
+
+				<p className="wtn-blocks-news-section__inspector-help">
+					{ __(
+						'O texto do link pode ser editado diretamente na prévia quando houver uma URL disponível.',
+						'wordpress-template-news-blocks'
+					) }
+				</p>
+			</PanelBody>
+
+			<PanelBody
+				title={ __(
+					'Seleção de matérias',
+					'wordpress-template-news-blocks'
+				) }
+				initialOpen
+			>
+				<RadioControl
+					label={ __(
+						'Modo de seleção',
+						'wordpress-template-news-blocks'
+					) }
+					selected={ selectionMode }
+					options={ [
+						{
+							label: __(
+								'Automática',
+								'wordpress-template-news-blocks'
+							),
+							value: 'automatic',
+						},
+						{
+							label: __(
+								'Manual',
+								'wordpress-template-news-blocks'
+							),
+							value: 'manual',
+						},
+					] }
+					onChange={ ( nextSelectionMode ) => {
+						setAttributes( {
+							selectionMode: nextSelectionMode,
+						} );
+					} }
+					help={
+						selectionMode === 'automatic'
+							? __(
+									'Os slots sem substituição manual usam as matérias mais recentes disponíveis.',
+									'wordpress-template-news-blocks'
+							  )
+							: __(
+									'Cada matéria da seção será escolhida manualmente.',
+									'wordpress-template-news-blocks'
+							  )
+					}
+				/>
+
+				<div className="wtn-blocks-news-section__slot-controls">
+					{ slotLabels.map( ( slotLabel, slotIndex ) => (
+						<EditorialPostSlotControl
+							key={ slotIndex }
+							label={ slotLabel }
+							selectionMode={ selectionMode }
+							configuredPostId={
+								normalizedSlotPostIds[ slotIndex ]
+							}
+							resolvedPostId={
+								computedResolvedPostIds[ slotIndex ]
+							}
+							resolvedPost={ resolvedPosts[ slotIndex ] }
+							source={ slotSources[ slotIndex ] }
+							categoryId={ normalizedCategoryId }
+							excludePostIds={ getSlotExcludedPostIds(
+								slotIndex
+							) }
+							onChange={ ( nextPostId ) => {
+								updateSlotPostId( slotIndex, nextPostId );
+							} }
+						/>
+					) ) }
+				</div>
+			</PanelBody>
+
+			<PanelBody
+				title={ __( 'Layout', 'wordpress-template-news-blocks' ) }
+				initialOpen={ false }
+			>
+				<RadioControl
+					label={ __(
+						'Variação visual',
+						'wordpress-template-news-blocks'
+					) }
+					selected={ layoutVariant }
+					options={ [
+						{
+							label: __(
+								'Layout 1 — imagem principal à esquerda',
+								'wordpress-template-news-blocks'
+							),
+							value: 'featured-media-left',
+						},
+						{
+							label: __(
+								'Layout 2 — imagem principal à direita',
+								'wordpress-template-news-blocks'
+							),
+							value: 'featured-media-right',
+						},
+					] }
+					onChange={ ( nextLayoutVariant ) => {
+						setAttributes( {
+							layoutVariant: nextLayoutVariant,
+						} );
+					} }
+					help={ __(
+						'No mobile, os dois layouts convergem para destaque empilhado e matérias secundárias compactas.',
+						'wordpress-template-news-blocks'
+					) }
+				/>
+			</PanelBody>
+		</InspectorControls>
+	);
+
 	return (
 		<>
-			<InspectorControls>
-				<PanelBody
-					title={ __(
-						'Configuração da seção',
-						'wordpress-template-news-blocks'
-					) }
-					initialOpen
-				>
-					<CategoryPicker
-						value={ normalizedCategoryId }
-						onChange={ handleCategoryChange }
-					/>
-				</PanelBody>
+			{ inspectorControls }
 
-				<PanelBody
-					title={ __(
-						'Seleção de matérias',
-						'wordpress-template-news-blocks'
-					) }
-					initialOpen
-				>
-					<RadioControl
-						label={ __(
-							'Modo de seleção',
-							'wordpress-template-news-blocks'
-						) }
-						selected={ selectionMode }
-						options={ [
-							{
-								label: __(
-									'Automática',
-									'wordpress-template-news-blocks'
-								),
-								value: 'automatic',
-							},
-							{
-								label: __(
-									'Manual',
-									'wordpress-template-news-blocks'
-								),
-								value: 'manual',
-							},
-						] }
-						onChange={ ( nextSelectionMode ) => {
+			<section { ...blockProps }>
+				<div className="wtn-blocks-news-section__header">
+					<EditorialTextOverrideControl
+						tagName="div"
+						className="wtn-blocks-news-section__section-title"
+						value={ titleOverride }
+						fallbackValue={ categoryTitle }
+						onChange={ ( nextTitleOverride ) => {
 							setAttributes( {
-								selectionMode: nextSelectionMode,
+								titleOverride: nextTitleOverride,
 							} );
 						} }
-						help={
-							selectionMode === 'automatic'
-								? __(
-										'Os slots sem substituição manual usam as matérias mais recentes disponíveis.',
-										'wordpress-template-news-blocks'
-								  )
-								: __(
-										'Cada matéria da seção será escolhida manualmente.',
-										'wordpress-template-news-blocks'
-								  )
-						}
+						placeholder={ __(
+							'Título da seção',
+							'wordpress-template-news-blocks'
+						) }
 					/>
 
-					<div className="wtn-blocks-news-section__slot-controls">
-						{ slotLabels.map( ( slotLabel, slotIndex ) => (
-							<EditorialPostSlotControl
-								key={ slotIndex }
-								label={ slotLabel }
-								selectionMode={ selectionMode }
-								configuredPostId={
-									normalizedSlotPostIds[ slotIndex ]
-								}
-								resolvedPostId={
-									computedResolvedPostIds[ slotIndex ]
-								}
-								resolvedPost={ resolvedPosts[ slotIndex ] }
-								source={ slotSources[ slotIndex ] }
-								categoryId={ normalizedCategoryId }
-								excludePostIds={ getSlotExcludedPostIds(
-									slotIndex
-								) }
-								onChange={ ( nextPostId ) => {
-									updateSlotPostId( slotIndex, nextPostId );
+					{ resolvedViewAllUrl && (
+						<div className="wtn-blocks-news-section__view-all">
+							<EditorialTextOverrideControl
+								tagName="span"
+								className="wtn-blocks-news-section__view-all-label"
+								value={ viewAllLabelOverride }
+								fallbackValue={ defaultViewAllLabel }
+								onChange={ ( nextLabelOverride ) => {
+									setAttributes( {
+										viewAllLabelOverride: nextLabelOverride,
+									} );
 								} }
+								placeholder={ defaultViewAllLabel }
 							/>
-						) ) }
-					</div>
-				</PanelBody>
 
-				<PanelBody
-					title={ __( 'Layout', 'wordpress-template-news-blocks' ) }
-					initialOpen={ false }
-				>
-					<RadioControl
-						label={ __(
-							'Variação visual',
-							'wordpress-template-news-blocks'
-						) }
-						selected={ layoutVariant }
-						options={ [
-							{
-								label: __(
-									'Layout 1 — imagem principal à esquerda',
-									'wordpress-template-news-blocks'
-								),
-								value: 'featured-media-left',
-							},
-							{
-								label: __(
-									'Layout 2 — imagem principal à direita',
-									'wordpress-template-news-blocks'
-								),
-								value: 'featured-media-right',
-							},
-						] }
-						onChange={ ( nextLayoutVariant ) => {
-							setAttributes( {
-								layoutVariant: nextLayoutVariant,
-							} );
-						} }
-						help={ __(
-							'No mobile, os dois layouts convergem para destaque empilhado e matérias secundárias em lista.',
-							'wordpress-template-news-blocks'
-						) }
-					/>
-				</PanelBody>
-			</InspectorControls>
-
-			<div { ...blockProps }>
-				<Placeholder
-					icon="screenoptions"
-					label={ __(
-						'News Section',
-						'wordpress-template-news-blocks'
+							<span
+								className="wtn-blocks-news-section__view-all-icon"
+								aria-hidden="true"
+							>
+								→
+							</span>
+						</div>
 					) }
-					instructions={ __(
-						'Confira abaixo as matérias atualmente resolvidas para esta seção.',
-						'wordpress-template-news-blocks'
-					) }
-				>
-					<div className="wtn-blocks-news-section__editor-summary">
-						<p>
-							<strong>
-								{ __(
-									'Categoria:',
-									'wordpress-template-news-blocks'
-								) }
-							</strong>{ ' ' }
-							{ categoryLabel }
-						</p>
+				</div>
 
-						<p>
-							<strong>
-								{ __(
-									'Seleção:',
-									'wordpress-template-news-blocks'
-								) }
-							</strong>{ ' ' }
-							{ selectionModeLabel }
-						</p>
-
-						<p>
-							<strong>
-								{ __(
-									'Layout:',
-									'wordpress-template-news-blocks'
-								) }
-							</strong>{ ' ' }
-							{ layoutLabel }
-						</p>
+				{ isResolvingPosts && ! featuredPost && (
+					<div className="wtn-blocks-news-section__loading">
+						<Spinner />
 					</div>
-					<div className="wtn-blocks-news-section__editor-posts">
-						<strong>
-							{ __(
-								'Matérias resolvidas:',
-								'wordpress-template-news-blocks'
+				) }
+
+				{ ! isResolvingPosts && ! featuredPost && (
+					<Notice status="warning" isDismissible={ false }>
+						{ selectionMode === 'manual'
+							? __(
+									'Defina a matéria de destaque para visualizar a seção. Sem destaque, o bloco não será exibido no frontend.',
+									'wordpress-template-news-blocks'
+							  )
+							: __(
+									'Nenhuma matéria disponível pôde ser resolvida para o destaque desta seção.',
+									'wordpress-template-news-blocks'
+							  ) }
+					</Notice>
+				) }
+
+				{ featuredPost && featuredPostId > 0 && (
+					<>
+						<NewsSectionPostEditor
+							post={ featuredPost }
+							postId={ featuredPostId }
+							postOverride={ getPostOverride(
+								normalizedPostOverrides,
+								featuredPostId
 							) }
-						</strong>
+							onChange={ ( nextPostOverride ) => {
+								handlePostOverrideChange(
+									featuredPostId,
+									nextPostOverride
+								);
+							} }
+							variant="featured"
+							sectionCategoryId={ normalizedCategoryId }
+						/>
 
-						<ol>
-							{ slotLabels.map( ( slotLabel, slotIndex ) => {
-								const post = resolvedPosts[ slotIndex ];
+						<div className="wtn-blocks-news-section__secondary-list">
+							{ secondaryPosts.map( ( post, secondaryIndex ) => {
 								const postId =
-									computedResolvedPostIds[ slotIndex ];
-								const source = slotSources[ slotIndex ];
+									secondaryPostIds[ secondaryIndex ] || 0;
+
+								if ( ! post || ! postId ) {
+									return (
+										<div
+											key={ secondaryIndex }
+											className="wtn-blocks-news-section__secondary-empty"
+										>
+											{ __(
+												'Matéria secundária não definida.',
+												'wordpress-template-news-blocks'
+											) }
+										</div>
+									);
+								}
 
 								return (
-									<li key={ slotLabel }>
-										<strong>{ slotLabel }:</strong>{ ' ' }
-										{ getResolvedPostLabel(
-											post,
-											isResolvingPosts
+									<NewsSectionPostEditor
+										key={ postId }
+										post={ post }
+										postId={ postId }
+										postOverride={ getPostOverride(
+											normalizedPostOverrides,
+											postId
 										) }
-										{ postId > 0 && (
-											<span className="wtn-blocks-news-section__editor-post-source">
-												{ ' ' }
-												—{ ' ' }
-												{ source === 'manual'
-													? __(
-															'manual',
-															'wordpress-template-news-blocks'
-													  )
-													: __(
-															'automática',
-															'wordpress-template-news-blocks'
-													  ) }
-											</span>
-										) }
-									</li>
+										onChange={ ( nextPostOverride ) => {
+											handlePostOverrideChange(
+												postId,
+												nextPostOverride
+											);
+										} }
+										variant="secondary"
+										sectionCategoryId={
+											normalizedCategoryId
+										}
+									/>
 								);
 							} ) }
-						</ol>
-					</div>
-				</Placeholder>
-			</div>
+						</div>
+					</>
+				) }
+			</section>
 		</>
 	);
 }

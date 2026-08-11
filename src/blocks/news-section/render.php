@@ -1,7 +1,7 @@
 <?php
 
 /**
- * News Section render callback.
+ * News Section block render.
  *
  * @package WordPress_Template_News_Blocks
  */
@@ -10,4 +10,686 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-return;
+$block_attributes = wp_parse_args(
+    $attributes ?? [],
+    [
+        'categoryId'           => 0,
+        'selectionMode'        => 'automatic',
+        'layoutVariant'        => 'featured-media-left',
+        'titleOverride'        => '',
+        'viewAllLabelOverride' => '',
+        'viewAllUrlOverride'   => '',
+        'slotPostIds'          => [0, 0, 0, 0],
+        'postOverrides'        => [],
+    ]
+);
+
+$category_id = absint($block_attributes['categoryId']);
+
+$selection_mode = in_array(
+    $block_attributes['selectionMode'],
+    ['automatic', 'manual'],
+    true
+)
+    ? $block_attributes['selectionMode']
+    : 'automatic';
+
+$layout_variant = in_array(
+    $block_attributes['layoutVariant'],
+    ['featured-media-left', 'featured-media-right'],
+    true
+)
+    ? $block_attributes['layoutVariant']
+    : 'featured-media-left';
+
+$slot_post_ids = is_array($block_attributes['slotPostIds'])
+    ? array_slice(
+        array_pad(
+            array_map(
+                'absint',
+                $block_attributes['slotPostIds']
+            ),
+            4,
+            0
+        ),
+        0,
+        4
+    )
+    : [0, 0, 0, 0];
+
+$post_overrides = is_array($block_attributes['postOverrides'])
+    ? $block_attributes['postOverrides']
+    : [];
+
+$resolved_post_ids = function_exists('wtn_blocks_resolve_news_section_posts')
+    ? wtn_blocks_resolve_news_section_posts(
+        $selection_mode,
+        $category_id,
+        $slot_post_ids
+    )
+    : [0, 0, 0, 0];
+
+$resolved_post_ids = array_slice(
+    array_pad(
+        array_map(
+            'absint',
+            $resolved_post_ids
+        ),
+        4,
+        0
+    ),
+    0,
+    4
+);
+
+$featured_post_id = $resolved_post_ids[0];
+
+if (0 === $featured_post_id) {
+    return;
+}
+
+$section_category = null;
+
+if ($category_id > 0) {
+    $category = get_term(
+        $category_id,
+        'category'
+    );
+
+    if ($category instanceof WP_Term) {
+        $section_category = $category;
+    }
+}
+
+$title_override = trim(
+    wp_strip_all_tags(
+        (string) $block_attributes['titleOverride']
+    )
+);
+
+$section_title = $title_override;
+
+if (
+    '' === $section_title
+    && $section_category instanceof WP_Term
+) {
+    $section_title = $section_category->name;
+}
+
+$view_all_url_override = trim(
+    (string) $block_attributes['viewAllUrlOverride']
+);
+
+$view_all_url = '';
+
+if ('' !== $view_all_url_override) {
+    $view_all_url = esc_url_raw($view_all_url_override);
+} elseif ($section_category instanceof WP_Term) {
+    $resolved_category_url = get_term_link($section_category);
+
+    if (! is_wp_error($resolved_category_url)) {
+        $view_all_url = $resolved_category_url;
+    }
+}
+
+$view_all_label = trim(
+    wp_strip_all_tags(
+        (string) $block_attributes['viewAllLabelOverride']
+    )
+);
+
+if (
+    '' !== $view_all_url
+    && '' === $view_all_label
+) {
+    $view_all_label = __(
+        'Ver todas',
+        'wordpress-template-news-blocks'
+    );
+}
+
+/**
+ * Returns an estimated reading-time label for a post.
+ *
+ * This intentionally mirrors the editor calculation: approximately
+ * 200 words per minute with a minimum of one minute.
+ *
+ * @param WP_Post $post Post object.
+ * @return string
+ */
+$get_reading_time_label = static function (WP_Post $post): string {
+    $content = (string) $post->post_content;
+
+    /*
+     * Remove Gutenberg comments before counting words so block names and
+     * serialized block attributes are not included in the estimate.
+     */
+    $content = preg_replace(
+        '/<!--\s*\/?wp:[\s\S]*?-->/',
+        ' ',
+        $content
+    );
+
+    if (! is_string($content)) {
+        $content = '';
+    }
+
+    $content = strip_shortcodes($content);
+
+    $content = wp_strip_all_tags(
+        $content,
+        true
+    );
+
+    $content = html_entity_decode(
+        $content,
+        ENT_QUOTES | ENT_HTML5,
+        get_bloginfo('charset') ?: 'UTF-8'
+    );
+
+    $matches = [];
+
+    preg_match_all(
+        '/\p{L}+/u',
+        $content,
+        $matches
+    );
+
+    $word_count = isset($matches[0])
+        ? count($matches[0])
+        : 0;
+
+    $minutes = max(
+        1,
+        (int) ceil($word_count / 200)
+    );
+
+    return sprintf(
+        /* translators: %d: estimated reading time in minutes. */
+        _n(
+            '%d min de leitura',
+            '%d min de leitura',
+            $minutes,
+            'wordpress-template-news-blocks'
+        ),
+        $minutes
+    );
+};
+
+/**
+ * Resolves the category displayed by an editorial card.
+ *
+ * When the News Section is tied to a category, that category has priority.
+ * Otherwise the first category assigned to the post is used.
+ *
+ * @param int $post_id Post ID.
+ * @return WP_Term|null
+ */
+$get_post_category = static function (int $post_id) use ($section_category): ?WP_Term {
+    if ($section_category instanceof WP_Term) {
+        return $section_category;
+    }
+
+    $categories = get_the_category($post_id);
+
+    if (
+        empty($categories)
+        || ! $categories[0] instanceof WP_Term
+    ) {
+        return null;
+    }
+
+    return $categories[0];
+};
+
+/**
+ * Builds the render data for one News Section post.
+ *
+ * @param int  $post_id     Post ID.
+ * @param bool $is_featured Whether the post is the featured slot.
+ * @return array<string, mixed>|null
+ */
+$get_post_render_data = static function (
+    int $post_id,
+    bool $is_featured
+) use (
+    $post_overrides,
+    $get_post_category,
+    $get_reading_time_label
+): ?array {
+    $post_id = absint($post_id);
+
+    if (0 === $post_id) {
+        return null;
+    }
+
+    $post = get_post($post_id);
+
+    if (
+        ! $post instanceof WP_Post
+        || 'post' !== $post->post_type
+        || 'publish' !== get_post_status($post)
+    ) {
+        return null;
+    }
+
+    $permalink = get_permalink($post);
+
+    if (
+        ! is_string($permalink)
+        || '' === $permalink
+    ) {
+        return null;
+    }
+
+    $post_override = function_exists('wtn_blocks_get_editorial_post_override')
+        ? wtn_blocks_get_editorial_post_override(
+            $post_overrides,
+            $post_id
+        )
+        : [
+            'titleOverride'   => '',
+            'excerptOverride' => '',
+            'imageOverrideId' => 0,
+        ];
+
+    $title = trim(
+        wp_strip_all_tags(
+            (string) $post_override['titleOverride']
+        )
+    );
+
+    if ('' === $title) {
+        $title = trim(
+            wp_strip_all_tags(
+                get_the_title($post)
+            )
+        );
+    }
+
+    if ('' === $title) {
+        $title = __(
+            'Matéria sem título',
+            'wordpress-template-news-blocks'
+        );
+    }
+
+    $excerpt = '';
+
+    if ($is_featured) {
+        $excerpt = trim(
+            wp_strip_all_tags(
+                (string) $post_override['excerptOverride']
+            )
+        );
+
+        if ('' === $excerpt) {
+            $excerpt = trim(
+                wp_strip_all_tags(
+                    get_the_excerpt($post)
+                )
+            );
+        }
+    }
+
+    $image_id = absint(
+        $post_override['imageOverrideId'] ?? 0
+    );
+
+    if (0 === $image_id) {
+        $image_id = (int) get_post_thumbnail_id($post);
+    }
+
+    $image_size = $is_featured
+        ? (
+            function_exists('has_image_size')
+            && has_image_size('wtn-featured')
+            ? 'wtn-featured'
+            : 'large'
+        )
+        : (
+            function_exists('has_image_size')
+            && has_image_size('wtn-card')
+            ? 'wtn-card'
+            : 'medium_large'
+        );
+
+    $image_html = '';
+
+    if ($image_id > 0) {
+        $image_html = wp_get_attachment_image(
+            $image_id,
+            $image_size,
+            false,
+            [
+                'class'    => $is_featured
+                    ? 'wtn-blocks-news-section__featured-image'
+                    : 'wtn-blocks-news-section__secondary-image',
+                'decoding' => 'async',
+                'sizes'    => $is_featured
+                    ? '(min-width: 782px) 55vw, 100vw'
+                    : '(min-width: 782px) 30vw, 36vw',
+            ]
+        );
+    }
+
+    $category = $get_post_category($post_id);
+    $category_url = '';
+
+    if ($category instanceof WP_Term) {
+        $resolved_category_url = get_term_link($category);
+
+        if (! is_wp_error($resolved_category_url)) {
+            $category_url = $resolved_category_url;
+        }
+    }
+
+    return [
+        'id'           => $post_id,
+        'permalink'    => $permalink,
+        'title'        => $title,
+        'excerpt'      => $excerpt,
+        'image_html'   => $image_html,
+        'category'     => $category,
+        'category_url' => $category_url,
+        'date'         => get_the_date('', $post),
+        'date_w3c'     => get_the_date(DATE_W3C, $post),
+        'reading_time' => $get_reading_time_label($post),
+    ];
+};
+
+$featured_post = $get_post_render_data(
+    $featured_post_id,
+    true
+);
+
+if (null === $featured_post) {
+    return;
+}
+
+$secondary_posts = [];
+
+foreach (array_slice($resolved_post_ids, 1, 3) as $secondary_post_id) {
+    $secondary_post = $get_post_render_data(
+        $secondary_post_id,
+        false
+    );
+
+    if (null === $secondary_post) {
+        continue;
+    }
+
+    $secondary_posts[] = $secondary_post;
+}
+
+$consumed_post_ids = [
+    $featured_post['id'],
+];
+
+foreach ($secondary_posts as $secondary_post) {
+    $consumed_post_ids[] = $secondary_post['id'];
+}
+
+if (function_exists('wtn_blocks_register_used_post_ids')) {
+    wtn_blocks_register_used_post_ids($consumed_post_ids);
+}
+
+/*
+ * Heading policy:
+ *
+ * - With a section title:
+ *   section title consumes the next editorial heading (H1/H2)
+ *   and post titles are one level below it.
+ *
+ * - Without a section title:
+ *   the featured post consumes the next editorial heading
+ *   and secondary posts are one level below the featured post.
+ */
+if ('' !== $section_title) {
+    $section_heading_tag = function_exists('wtn_blocks_get_next_editorial_heading_tag')
+        ? wtn_blocks_get_next_editorial_heading_tag()
+        : 'h2';
+
+    $section_heading_tag = function_exists('wtn_blocks_sanitize_heading_tag')
+        ? wtn_blocks_sanitize_heading_tag($section_heading_tag)
+        : $section_heading_tag;
+
+    $post_heading_tag = function_exists('wtn_blocks_get_child_heading_tag')
+        ? wtn_blocks_get_child_heading_tag($section_heading_tag)
+        : 'h3';
+} else {
+    $section_heading_tag = '';
+
+    $post_heading_tag = function_exists('wtn_blocks_get_next_editorial_heading_tag')
+        ? wtn_blocks_get_next_editorial_heading_tag()
+        : 'h2';
+}
+
+$post_heading_tag = function_exists('wtn_blocks_sanitize_heading_tag')
+    ? wtn_blocks_sanitize_heading_tag($post_heading_tag)
+    : $post_heading_tag;
+
+$secondary_heading_tag = function_exists('wtn_blocks_get_child_heading_tag')
+    ? wtn_blocks_get_child_heading_tag($post_heading_tag)
+    : 'h3';
+
+$secondary_heading_tag = function_exists('wtn_blocks_sanitize_heading_tag')
+    ? wtn_blocks_sanitize_heading_tag($secondary_heading_tag)
+    : $secondary_heading_tag;
+
+/*
+ * When the section itself owns the heading, featured and secondary titles
+ * are siblings at the same semantic level.
+ */
+if ('' !== $section_heading_tag) {
+    $secondary_heading_tag = $post_heading_tag;
+}
+
+$section_heading_tag = '' !== $section_heading_tag
+    ? tag_escape($section_heading_tag)
+    : '';
+
+$post_heading_tag = tag_escape($post_heading_tag);
+$secondary_heading_tag = tag_escape($secondary_heading_tag);
+
+$wrapper_classes = [
+    'wtn-blocks-news-section',
+    'wtn-blocks-news-section--' . $layout_variant,
+];
+
+if ('' === $section_title) {
+    $wrapper_classes[] = 'wtn-blocks-news-section--no-title';
+}
+
+$wrapper_attributes = get_block_wrapper_attributes(
+    [
+        'class' => implode(' ', $wrapper_classes),
+    ]
+);
+
+$featured_card_classes = [
+    'wtn-blocks-news-section__featured-card',
+];
+
+if ('' === $featured_post['image_html']) {
+    $featured_card_classes[] = 'wtn-blocks-news-section__featured-card--no-media';
+}
+
+$featured_media_label = sprintf(
+    /* translators: %s: post title. */
+    __('Abrir matéria: %s', 'wordpress-template-news-blocks'),
+    $featured_post['title']
+);
+
+$render_category = static function (
+    array $post_data,
+    string $class_name
+): void {
+    if (! $post_data['category'] instanceof WP_Term) {
+        return;
+    }
+
+    if ('' !== $post_data['category_url']) {
+?>
+        <a
+            class="<?php echo esc_attr($class_name); ?>"
+            href="<?php echo esc_url($post_data['category_url']); ?>">
+            <?php echo esc_html($post_data['category']->name); ?>
+        </a>
+    <?php
+
+        return;
+    }
+    ?>
+    <span class="<?php echo esc_attr($class_name); ?>">
+        <?php echo esc_html($post_data['category']->name); ?>
+    </span>
+<?php
+};
+
+$render_meta = static function (
+    array $post_data,
+    string $class_prefix
+): void {
+?>
+    <div class="<?php echo esc_attr($class_prefix . '-meta'); ?>">
+        <?php if ('' !== $post_data['date']) : ?>
+            <time
+                class="<?php echo esc_attr($class_prefix . '-meta-item'); ?>"
+                datetime="<?php echo esc_attr($post_data['date_w3c']); ?>">
+                <?php echo esc_html($post_data['date']); ?>
+            </time>
+        <?php endif; ?>
+
+        <span class="<?php echo esc_attr($class_prefix . '-meta-item'); ?>">
+            <?php echo esc_html($post_data['reading_time']); ?>
+        </span>
+    </div>
+<?php
+};
+?>
+
+<section <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+            ?>>
+    <?php if ('' !== $section_title || '' !== $view_all_url) : ?>
+        <header class="wtn-blocks-news-section__header">
+            <?php if ('' !== $section_title) : ?>
+                <<?php echo esc_html($section_heading_tag); ?> class="wtn-blocks-news-section__section-title">
+                    <?php echo esc_html($section_title); ?>
+                </<?php echo esc_html($section_heading_tag); ?>>
+            <?php endif; ?>
+
+            <?php if ('' !== $view_all_url) : ?>
+                <a
+                    class="wtn-blocks-news-section__view-all"
+                    href="<?php echo esc_url($view_all_url); ?>">
+                    <span class="wtn-blocks-news-section__view-all-label">
+                        <?php echo esc_html($view_all_label); ?>
+                    </span>
+
+                    <span
+                        class="wtn-blocks-news-section__view-all-icon"
+                        aria-hidden="true">
+                        &rarr;
+                    </span>
+                </a>
+            <?php endif; ?>
+        </header>
+    <?php endif; ?>
+
+    <article class="<?php echo esc_attr(implode(' ', $featured_card_classes)); ?>">
+        <?php if ('' !== $featured_post['image_html']) : ?>
+            <a
+                class="wtn-blocks-news-section__featured-media"
+                href="<?php echo esc_url($featured_post['permalink']); ?>"
+                aria-label="<?php echo esc_attr($featured_media_label); ?>">
+                <?php echo $featured_post['image_html']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                ?>
+            </a>
+        <?php endif; ?>
+
+        <div class="wtn-blocks-news-section__featured-content">
+            <?php
+            $render_category(
+                $featured_post,
+                'wtn-blocks-news-section__featured-category'
+            );
+            ?>
+
+            <<?php echo esc_html($post_heading_tag); ?> class="wtn-blocks-news-section__featured-title">
+                <a href="<?php echo esc_url($featured_post['permalink']); ?>">
+                    <?php echo esc_html($featured_post['title']); ?>
+                </a>
+            </<?php echo esc_html($post_heading_tag); ?>>
+
+            <?php if ('' !== $featured_post['excerpt']) : ?>
+                <p class="wtn-blocks-news-section__featured-excerpt">
+                    <?php echo esc_html($featured_post['excerpt']); ?>
+                </p>
+            <?php endif; ?>
+
+            <?php
+            $render_meta(
+                $featured_post,
+                'wtn-blocks-news-section__featured'
+            );
+            ?>
+        </div>
+    </article>
+
+    <?php if (! empty($secondary_posts)) : ?>
+        <div class="wtn-blocks-news-section__secondary-list">
+            <?php foreach ($secondary_posts as $secondary_post) : ?>
+                <?php
+                $secondary_card_classes = [
+                    'wtn-blocks-news-section__secondary-card',
+                ];
+
+                if ('' === $secondary_post['image_html']) {
+                    $secondary_card_classes[] = 'wtn-blocks-news-section__secondary-card--no-media';
+                }
+
+                $secondary_media_label = sprintf(
+                    /* translators: %s: post title. */
+                    __('Abrir matéria: %s', 'wordpress-template-news-blocks'),
+                    $secondary_post['title']
+                );
+                ?>
+
+                <article class="<?php echo esc_attr(implode(' ', $secondary_card_classes)); ?>">
+                    <?php if ('' !== $secondary_post['image_html']) : ?>
+                        <a
+                            class="wtn-blocks-news-section__secondary-media"
+                            href="<?php echo esc_url($secondary_post['permalink']); ?>"
+                            aria-label="<?php echo esc_attr($secondary_media_label); ?>">
+                            <?php echo $secondary_post['image_html']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+                            ?>
+                        </a>
+                    <?php endif; ?>
+
+                    <div class="wtn-blocks-news-section__secondary-content">
+                        <?php
+                        $render_category(
+                            $secondary_post,
+                            'wtn-blocks-news-section__secondary-category'
+                        );
+                        ?>
+
+                        <<?php echo esc_html($secondary_heading_tag); ?> class="wtn-blocks-news-section__secondary-title">
+                            <a href="<?php echo esc_url($secondary_post['permalink']); ?>">
+                                <?php echo esc_html($secondary_post['title']); ?>
+                            </a>
+                        </<?php echo esc_html($secondary_heading_tag); ?>>
+
+                        <?php
+                        $render_meta(
+                            $secondary_post,
+                            'wtn-blocks-news-section__secondary'
+                        );
+                        ?>
+                    </div>
+                </article>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
+</section>
