@@ -18,10 +18,10 @@ Blocos disponíveis:
 - Breaking News
 - News Section
 - Latest News
+- Ad Slot
 
 Blocos planejados:
 
-- Ad Placeholder
 - Featured Authors
 
 Requisitos mínimos:
@@ -56,11 +56,14 @@ Este plugin é responsável por:
 - overrides editoriais de título, chamada e imagem;
 - renderização dinâmica;
 - semântica dos headings editoriais;
+- posições publicitárias manuais e AdSense;
 - assets específicos dos blocos no editor e no frontend.
 
 Os blocos não dependem de template-parts do tema para renderizar seu conteúdo.
 
 Quando o tema fornece image sizes específicos, o plugin pode aproveitá-los. Caso contrário, utiliza tamanhos nativos do WordPress como fallback.
+
+A integração global com o Google AdSense, incluindo o carregamento do script global, permanece responsabilidade do site, do Site Kit ou de outra integração apropriada. O plugin é responsável apenas pelas unidades AdSense utilizadas pelo Ad Slot.
 
 ---
 
@@ -96,10 +99,12 @@ Customizações editoriais que pertencem a uma matéria são associadas ao ID do
 
 Conceitualmente:
 
-    postOverrides[postId]
-    ├── titleOverride
-    ├── excerptOverride
-    └── imageOverrideId
+```
+postOverrides[postId]
+├── titleOverride
+├── excerptOverride
+└── imageOverrideId
+```
 
 Isso evita que uma customização criada para uma matéria seja aplicada acidentalmente a outra quando o conteúdo automático muda.
 
@@ -156,19 +161,23 @@ Quando a News Section possui título, o título da seção representa seu headin
 
 Exemplo quando é o primeiro bloco editorial:
 
-    H1 — Título da seção
-    ├── H2 — Destaque
-    ├── H2 — Secundária
-    ├── H2 — Secundária
-    └── H2 — Secundária
+```
+H1 — Título da seção
+├── H2 — Destaque
+├── H2 — Secundária
+├── H2 — Secundária
+└── H2 — Secundária
+```
 
 Se um bloco anterior já consumiu o `h1`:
 
-    H2 — Título da seção
-    ├── H3 — Destaque
-    ├── H3 — Secundária
-    ├── H3 — Secundária
-    └── H3 — Secundária
+```
+H2 — Título da seção
+├── H3 — Destaque
+├── H3 — Secundária
+├── H3 — Secundária
+└── H3 — Secundária
+```
 
 ### News Section sem título
 
@@ -176,10 +185,12 @@ Quando a seção não possui título, a matéria de destaque assume o papel de h
 
 Exemplo:
 
-    H1 — Destaque
-    ├── H2 — Secundária
-    ├── H2 — Secundária
-    └── H2 — Secundária
+```
+H1 — Destaque
+├── H2 — Secundária
+├── H2 — Secundária
+└── H2 — Secundária
+```
 
 A News Section não é renderizada se não houver uma matéria válida no slot de destaque.
 
@@ -222,7 +233,8 @@ Exemplos de configurações mantidas no Inspector:
 - quantidade de matérias;
 - URL do link “Ver todas”;
 - exibição do link “Ver todas”;
-- posição da mídia.
+- posição da mídia;
+- tipo, placement e formato do Ad Slot.
 
 Componentes editoriais reutilizáveis são compartilhados entre os blocos para manter comportamento consistente.
 
@@ -446,20 +458,69 @@ O Latest News utiliza `resolvedPostIds` com `role: "local"` para comunicar ao Gu
 
 ---
 
+### Ad Slot
+
+Posição publicitária reutilizável dentro da composição Gutenberg.
+
+Características:
+
+- bloco dinâmico;
+- tipos `manual` e `adsense`;
+- placement `horizontal` ou `rectangle`;
+- formatos publicitários predefinidos;
+- anúncio Manual com imagem e URL opcional;
+- links manuais clicáveis com `rel="sponsored"`;
+- configuração global do AdSense Client ID;
+- Ad Slot ID configurado por ocorrência;
+- preview do AdSense no Gutenberg sem carregar anúncios reais;
+- integração independente do Site Kit;
+- script global do AdSense não é carregado pelo bloco;
+- identificação visual `Publicidade`;
+- formatos adaptados à largura disponível com Container Queries;
+- imagens manuais preservadas com `object-fit: contain`;
+- não participa da seleção ou deduplicação de matérias;
+- não participa da hierarquia de headings.
+
+Formatos disponíveis no MVP:
+
+**Horizontal**
+
+- Mobile Banner — 320 × 50
+- Large Mobile Banner — 320 × 100
+- Leaderboard — 728 × 90
+- Super Leaderboard — 970 × 90
+- Billboard — 970 × 250
+
+**Rectangle**
+
+- Medium Rectangle — 300 × 250
+
+Quando a dimensão nominal de um formato não cabe no container disponível, o Ad Slot reduz sua geometria proporcionalmente sem trocar automaticamente o formato escolhido.
+
+No modo Manual, a imagem é contida dentro da geometria do formato sem crop ou distorção.
+
+No modo AdSense, a unidade continua responsiva e utiliza o placement como `data-ad-format`. O carregamento global do AdSense permanece responsabilidade do site.
+
+O AdSense Client ID pode ser configurado em **Configurações → WordPress Template News Blocks**.
+
+---
+
 ## Renderização dinâmica
 
-Os quatro blocos disponíveis atualmente são dinâmicos.
+Os cinco blocos disponíveis atualmente são dinâmicos.
 
 O conteúdo final não é salvo como HTML estático no post.
 
-Cada bloco possui um `render.php` responsável por:
+Cada bloco possui um `render.php` responsável por validar seus atributos e gerar o markup final.
 
-- validar seus atributos;
+Nos blocos editoriais de notícias, a renderização também é responsável, quando aplicável, por:
+
 - validar os posts utilizados;
 - aplicar overrides;
 - respeitar o contexto de posts já consumidos;
-- definir a hierarquia semântica;
-- gerar o markup final.
+- definir a hierarquia semântica.
+
+No Ad Slot, a renderização decide entre anúncio Manual e unidade AdSense e não participa do contexto editorial de posts ou headings.
 
 Os arquivos dentro de `build/` são artefatos gerados e não devem ser editados manualmente.
 
@@ -469,40 +530,44 @@ Alterações devem ser realizadas em `src/` e posteriormente compiladas.
 
 ## Estrutura principal
 
-    wordpress-template-news-blocks.php
+```
+wordpress-template-news-blocks.php
 
-    inc/
-    ├── blocks.php
-    ├── editorial-post-overrides.php
-    ├── heading-context.php
-    ├── post-context.php
-    ├── post-selection.php
-    └── setup.php
+inc/
+├── blocks.php
+├── editorial-post-overrides.php
+├── heading-context.php
+├── post-context.php
+├── post-selection.php
+├── settings.php
+└── setup.php
 
-    src/
-    ├── blocks/
-    │   ├── breaking-news/
-    │   ├── editorial-hero/
-    │   ├── latest-news/
-    │   └── news-section/
-    │
-    ├── components/
-    │   ├── category-picker/
-    │   ├── editorial-post-slot-control/
-    │   ├── editorial-text-override-control/
-    │   ├── media-override-control/
-    │   └── post-picker/
-    │
-    ├── hooks/
-    │   ├── use-latest-news-posts/
-    │   ├── use-news-section-posts/
-    │   └── use-previous-editorial-post-ids/
-    │
-    └── utils/
-        └── editorial-post-overrides.js
+src/
+├── blocks/
+│   ├── ad-slot/
+│   ├── breaking-news/
+│   ├── editorial-hero/
+│   ├── latest-news/
+│   └── news-section/
+│
+├── components/
+│   ├── category-picker/
+│   ├── editorial-post-slot-control/
+│   ├── editorial-text-override-control/
+│   ├── media-override-control/
+│   └── post-picker/
+│
+├── hooks/
+│   ├── use-latest-news-posts/
+│   ├── use-news-section-posts/
+│   └── use-previous-editorial-post-ids/
+│
+└── utils/
+    └── editorial-post-overrides.js
 
-    build/
-    └── blocks/
+build/
+└── blocks/
+```
 
 ---
 
@@ -517,35 +582,3 @@ Gerar o build de produção: `npm run build`
 Verificar JavaScript: `npm run lint:js`
 
 Aplicar a formatação disponibilizada pelo `@wordpress/scripts`: `npm run format`
-
-Atualizar os pacotes WordPress utilizados no projeto: `npm run packages-update`
-
----
-
-## Fluxo de alteração
-
-O fluxo esperado para alterações nos blocos é:
-
-1. modificar arquivos em `src/` ou helpers em `inc/`;
-2. executar o lint;
-3. gerar novamente o build;
-4. validar os arquivos PHP;
-5. verificar whitespace e diferenças acidentais;
-6. testar editor e frontend.
-
-O diretório `build/` deve permanecer sincronizado com `src/`, mas nunca ser tratado como fonte de implementação.
-
----
-
-## Validação recomendada
-
-Antes de concluir uma alteração relevante:
-
-- `npm run lint:js`
-- `npm run build`
-- `git diff --check`
-- executar `php -l` nos arquivos PHP alterados;
-- validar o comportamento dos blocos no Gutenberg;
-- validar a renderização no frontend;
-- testar a ordem dos blocos quando houver deduplicação editorial;
-- conferir a hierarquia de headings gerada.
