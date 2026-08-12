@@ -17,10 +17,10 @@ Blocos disponíveis:
 - Editorial Hero
 - Breaking News
 - News Section
+- Latest News
 
 Blocos planejados:
 
-- Latest News
 - Ad Placeholder
 - Featured Authors
 
@@ -42,7 +42,7 @@ O tema `wordpress-template-news` é responsável por:
 - estilos globais do tema;
 - `theme.json`;
 - estilos base do editor;
-- suporte ao conteúdo Gutenberg nativo.
+- suporte ao conteúdo Gutenberg nativo;
 - image sizes específicos quando disponíveis.
 
 Este plugin é responsável por:
@@ -77,9 +77,14 @@ Exemplo:
 1. Breaking News usa o post A.
 2. Editorial Hero aparece depois e não pode reutilizar o post A.
 3. News Section resolve seus posts excluindo A e os demais posts já consumidos.
-4. Uma segunda News Section também exclui tudo que foi efetivamente utilizado pelos blocos anteriores.
+4. Latest News também exclui tudo que foi efetivamente utilizado pelos blocos anteriores.
+5. Blocos editoriais posteriores continuam respeitando as matérias já consumidas.
 
 Essa regra é aplicada tanto no editor quanto no frontend.
+
+Todos os blocos editoriais de notícias participam dessa coordenação no Gutenberg.
+
+Blocos com seleção manual simples, como Editorial Hero e Breaking News, comunicam diretamente o `postId` selecionado. Blocos que resolvem matérias dinamicamente, como News Section e Latest News, utilizam `resolvedPostIds` com `role: "local"` para comunicar ao editor quais posts estão efetivamente resolvidos naquele momento.
 
 Uma matéria só é registrada como consumida quando o bloco realmente possui condições de renderizá-la.
 
@@ -105,9 +110,13 @@ Exemplo:
 - post B utiliza seus próprios valores;
 - se o post A voltar a ser utilizado, seus overrides anteriores voltam com ele.
 
-O mesmo contrato é compartilhado pelo Editorial Hero e pela News Section.
+O mesmo contrato é compartilhado pelos blocos editoriais quando aplicável.
+
+O Editorial Hero e a News Section podem utilizar título, chamada e imagem.
 
 O Breaking News utiliza a mesma estrutura, mas atualmente consome apenas `titleOverride`, porque não possui chamada ou imagem.
+
+O Latest News utiliza `titleOverride` e `imageOverrideId`, porque seus layouts não possuem chamada editorial.
 
 Configurações que pertencem ao próprio bloco continuam sendo atributos do bloco.
 
@@ -115,7 +124,8 @@ Exemplos:
 
 - label do Breaking News;
 - posição da mídia do Editorial Hero;
-- categoria e layout da News Section.
+- categoria e layout da News Section;
+- categoria, quantidade e layout do Latest News.
 
 ---
 
@@ -130,6 +140,7 @@ Blocos candidatos atualmente:
 - Editorial Hero
 - Breaking News
 - News Section
+- Latest News
 
 A regra geral é:
 
@@ -174,6 +185,14 @@ A News Section não é renderizada se não houver uma matéria válida no slot d
 
 Dessa forma, uma seção incompleta também não consome o heading principal nem reserva posts secundários.
 
+### Latest News
+
+No Latest News, o título da seção representa o heading editorial principal e os títulos das matérias utilizam o nível imediatamente abaixo.
+
+Sem categoria, o título padrão é `Últimas notícias`. Com categoria definida, o nome da categoria é utilizado como fallback.
+
+Se nenhuma matéria elegível estiver disponível, o bloco não é renderizado e não consome o heading principal.
+
 ---
 
 ## Experiência de edição
@@ -190,7 +209,9 @@ Exemplos de conteúdo editável diretamente na prévia:
 - headline do Breaking News;
 - label do Breaking News;
 - título da News Section;
-- label do link “Ver todas”.
+- label do link “Ver todas”;
+- título da seção do Latest News;
+- título e imagem das matérias do Latest News.
 
 Exemplos de configurações mantidas no Inspector:
 
@@ -198,7 +219,9 @@ Exemplos de configurações mantidas no Inspector:
 - modo automático ou manual;
 - categoria;
 - layout;
+- quantidade de matérias;
 - URL do link “Ver todas”;
+- exibição do link “Ver todas”;
 - posição da mídia.
 
 Componentes editoriais reutilizáveis são compartilhados entre os blocos para manter comportamento consistente.
@@ -351,29 +374,23 @@ Se uma matéria secundária possuir um `excerptOverride`, o valor continua prese
 
 #### Layouts
 
-A News Section possui duas variações de desktop.
+A News Section possui duas variações visuais.
 
 **Layout 1**
 
 - imagem da matéria principal à esquerda;
 - conteúdo principal à direita;
-- três matérias secundárias em colunas;
-- imagem à esquerda e conteúdo à direita dentro de cada card secundário.
+- três matérias secundárias;
+- composição adaptada conforme a largura disponível.
 
 **Layout 2**
 
 - conteúdo da matéria principal à esquerda;
 - imagem principal à direita;
-- três matérias secundárias em colunas;
-- imagem acima e conteúdo abaixo dentro de cada card secundário.
+- três matérias secundárias;
+- composição adaptada conforme a largura disponível.
 
-No mobile, os dois layouts convergem para:
-
-- destaque empilhado;
-- imagem acima do conteúdo principal;
-- matérias secundárias compactas;
-- imagem à esquerda;
-- conteúdo à direita.
+Os dois layouts respondem à largura real disponível no próprio bloco utilizando Container Queries, sem depender de uma composição estrutural específica da página.
 
 #### Estado local do editor
 
@@ -392,9 +409,46 @@ No frontend, os posts são resolvidos novamente a partir de:
 
 ---
 
+### Latest News
+
+Listagem cronológica de notícias recentes com seleção exclusivamente automática.
+
+Características:
+
+- bloco dinâmico;
+- quantidade configurável entre 3 e 5 matérias;
+- quantidade padrão de 4 matérias;
+- categoria opcional;
+- posts recentes ordenados por data e ID de forma determinística;
+- prevenção de repetição com blocos editoriais anteriores;
+- título padrão `Últimas notícias` quando não existe categoria;
+- nome da categoria como título padrão quando uma categoria está definida;
+- título da seção customizável inline;
+- título das matérias customizável inline;
+- imagem editorial customizável por matéria;
+- overrides associados ao ID da matéria;
+- link `Ver todas` opcional;
+- archive da categoria como destino automático quando existe categoria;
+- URL manual para `Ver todas` quando não existe categoria;
+- layout Horizontal;
+- layout Vertical;
+- responsividade interna orientada à largura do próprio bloco com Container Queries;
+- participação automática na hierarquia de headings;
+- renderização dinâmica em PHP.
+
+No layout Horizontal, cada item apresenta imagem, categoria, título e data.
+
+No layout Vertical, cada item apresenta imagem, título e data.
+
+Posts sem imagem destacada continuam elegíveis. O editor pode fornecer uma imagem customizada apenas para aquela ocorrência através de `imageOverrideId`.
+
+O Latest News utiliza `resolvedPostIds` com `role: "local"` para comunicar ao Gutenberg quais matérias foram resolvidas automaticamente. No frontend, os posts são resolvidos novamente a partir da configuração persistida e do contexto editorial corrente.
+
+---
+
 ## Renderização dinâmica
 
-Os três blocos disponíveis atualmente são dinâmicos.
+Os quatro blocos disponíveis atualmente são dinâmicos.
 
 O conteúdo final não é salvo como HTML estático no post.
 
@@ -429,6 +483,7 @@ Alterações devem ser realizadas em `src/` e posteriormente compiladas.
     ├── blocks/
     │   ├── breaking-news/
     │   ├── editorial-hero/
+    │   ├── latest-news/
     │   └── news-section/
     │
     ├── components/
@@ -439,6 +494,7 @@ Alterações devem ser realizadas em `src/` e posteriormente compiladas.
     │   └── post-picker/
     │
     ├── hooks/
+    │   ├── use-latest-news-posts/
     │   ├── use-news-section-posts/
     │   └── use-previous-editorial-post-ids/
     │
