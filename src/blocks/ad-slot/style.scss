@@ -1,0 +1,175 @@
+.wtn-blocks-ad-slot {
+  --wtn-ad-slot-color-label: var(--wp--preset--color--muted, #64748b);
+  --wtn-ad-slot-creative-inline-size: 100%;
+  --wtn-ad-slot-creative-aspect-ratio: 728 / 90;
+
+  container: wtn-ad-slot / inline-size;
+
+  box-sizing: border-box;
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: inherit;
+  }
+
+  &__label {
+    display: block;
+    color: var(--wtn-ad-slot-color-label);
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    line-height: 1.2;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  &__creative {
+    display: grid;
+    width: var(--wtn-ad-slot-creative-inline-size);
+    max-width: 100%;
+    aspect-ratio: var(--wtn-ad-slot-creative-aspect-ratio);
+    justify-self: center;
+    place-items: center;
+  }
+
+  &__link {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    place-items: center;
+    text-decoration: none;
+
+    &:focus-visible {
+      outline: 2px solid currentcolor;
+      outline-offset: 3px;
+    }
+  }
+
+  &__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  &__adsense {
+    display: block;
+    width: 100%;
+    min-height: 100%;
+  }
+
+  /*
+   * Manual creatives must conform to the selected ad format.
+   *
+   * Images can have intrinsic dimensions and aspect ratios that are
+   * different from the selected format. Prevent their intrinsic minimum
+   * size from expanding the grid track beyond the creative geometry.
+   */
+  &--manual {
+    .wtn-blocks-ad-slot__creative {
+      grid-template-rows: minmax(0, 1fr);
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .wtn-blocks-ad-slot__link {
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .wtn-blocks-ad-slot__image {
+      min-width: 0;
+      min-height: 0;
+      max-width: 100%;
+      max-height: 100%;
+    }
+  }
+
+  /*
+   * Formats.
+   *
+   * O formato escolhido pelo editor permanece estável.
+   * Quando sua dimensão nominal não cabe no container,
+   * a creative utiliza 100% da largura disponível e mantém
+   * a proporção correspondente.
+   */
+
+  &--format-mobile-banner {
+    --wtn-ad-slot-creative-aspect-ratio: 320 / 50;
+  }
+
+  &--format-large-mobile-banner {
+    --wtn-ad-slot-creative-aspect-ratio: 320 / 100;
+  }
+
+  &--format-leaderboard {
+    --wtn-ad-slot-creative-aspect-ratio: 728 / 90;
+  }
+
+  &--format-super-leaderboard {
+    --wtn-ad-slot-creative-aspect-ratio: 970 / 90;
+  }
+
+  &--format-billboard {
+    --wtn-ad-slot-creative-aspect-ratio: 970 / 250;
+  }
+
+  &--format-medium-rectangle {
+    --wtn-ad-slot-creative-aspect-ratio: 300 / 250;
+  }
+
+  /*
+   * 300px.
+   *
+   * Medium Rectangle passa a utilizar sua dimensão nominal
+   * quando o próprio Ad Slot comporta 300px.
+   */
+  @container wtn-ad-slot (min-width: 300px) {
+    &--format-medium-rectangle {
+      --wtn-ad-slot-creative-inline-size: 300px;
+    }
+  }
+
+  /*
+   * 320px.
+   *
+   * Os dois formatos mobile passam a utilizar sua largura
+   * nominal quando o próprio Ad Slot comporta 320px.
+   */
+  @container wtn-ad-slot (min-width: 320px) {
+    &--format-mobile-banner,
+    &--format-large-mobile-banner {
+      --wtn-ad-slot-creative-inline-size: 320px;
+    }
+  }
+
+  /*
+   * 728px.
+   *
+   * Leaderboard passa a utilizar sua dimensão nominal.
+   */
+  @container wtn-ad-slot (min-width: 728px) {
+    &--format-leaderboard {
+      --wtn-ad-slot-creative-inline-size: 728px;
+    }
+  }
+
+  /*
+   * 970px.
+   *
+   * Super Leaderboard e Billboard passam a utilizar
+   * sua dimensão nominal.
+   */
+  @container wtn-ad-slot (min-width: 970px) {
+    &--format-super-leaderboard,
+    &--format-billboard {
+      --wtn-ad-slot-creative-inline-size: 970px;
+    }
+  }
+}

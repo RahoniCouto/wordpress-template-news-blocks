@@ -21,6 +21,7 @@ define('WTN_BLOCKS_PATH', plugin_dir_path(__FILE__));
 define('WTN_BLOCKS_URL', plugin_dir_url(__FILE__));
 
 require_once WTN_BLOCKS_PATH . 'inc/setup.php';
+require_once WTN_BLOCKS_PATH . 'inc/settings.php';
 require_once WTN_BLOCKS_PATH . 'inc/heading-context.php';
 require_once WTN_BLOCKS_PATH . 'inc/post-context.php';
 require_once WTN_BLOCKS_PATH . 'inc/post-selection.php';
@@ -28,4 +29,7 @@ require_once WTN_BLOCKS_PATH . 'inc/editorial-post-overrides.php';
 require_once WTN_BLOCKS_PATH . 'inc/blocks.php';
 
 add_action('plugins_loaded', 'wtn_blocks_setup');
+add_action('admin_init', 'wtn_blocks_register_settings');
+add_action('admin_menu', 'wtn_blocks_register_settings_page');
+add_filter('block_editor_settings_all', 'wtn_blocks_add_block_editor_settings');
 add_action('init', 'wtn_blocks_register_blocks');

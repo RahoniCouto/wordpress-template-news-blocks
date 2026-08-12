@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "wtn-blocks/ad-slot",
+  "version": "0.1.0",
+  "title": "Ad Slot",
+  "category": "widgets",
+  "icon": "megaphone",
+  "description": "Posição publicitária para anúncios manuais ou unidades Google AdSense.",
+  "textdomain": "wordpress-template-news-blocks",
+  "attributes": {
+    "type": {
+      "type": "string",
+      "default": "manual"
+    },
+    "placement": {
+      "type": "string",
+      "default": "horizontal"
+    },
+    "format": {
+      "type": "string",
+      "default": "leaderboard"
+    },
+    "imageId": {
+      "type": "number",
+      "default": 0
+    },
+    "url": {
+      "type": "string",
+      "default": ""
+    },
+    "adSlotId": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": [
+      "wide"
+    ]
+  },
+  "editorScript": "file:./index.js",
+  "style": "file:./style-index.css",
+  "editorStyle": "file:./index.css",
+  "render": "file:./render.php"
+}
