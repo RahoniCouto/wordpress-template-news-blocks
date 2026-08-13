@@ -19,9 +19,6 @@ Blocos disponíveis:
 - News Section
 - Latest News
 - Ad Slot
-
-Blocos planejados:
-
 - Featured Authors
 
 Requisitos mínimos:
@@ -43,7 +40,8 @@ O tema `wordpress-template-news` é responsável por:
 - `theme.json`;
 - estilos base do editor;
 - suporte ao conteúdo Gutenberg nativo;
-- image sizes específicos quando disponíveis.
+- image sizes específicos quando disponíveis;
+- dados editoriais do perfil de autores utilizados pelos templates e blocos.
 
 Este plugin é responsável por:
 
@@ -57,6 +55,7 @@ Este plugin é responsável por:
 - renderização dinâmica;
 - semântica dos headings editoriais;
 - posições publicitárias manuais e AdSense;
+- curadoria de autores WordPress no Featured Authors;
 - assets específicos dos blocos no editor e no frontend.
 
 Os blocos não dependem de template-parts do tema para renderizar seu conteúdo.
@@ -146,6 +145,7 @@ Blocos candidatos atualmente:
 - Breaking News
 - News Section
 - Latest News
+- Featured Authors
 
 A regra geral é:
 
@@ -204,6 +204,14 @@ Sem categoria, o título padrão é `Últimas notícias`. Com categoria definida
 
 Se nenhuma matéria elegível estiver disponível, o bloco não é renderizado e não consome o heading principal.
 
+### Featured Authors
+
+No Featured Authors, o título da seção representa o heading editorial principal.
+
+Os nomes dos autores não são headings. Eles fazem parte de uma lista de autores e permanecem como conteúdo textual dentro dos links para os respectivos archives.
+
+Se nenhum autor elegível estiver disponível, o bloco não é renderizado e não consome o heading principal.
+
 ---
 
 ## Experiência de edição
@@ -222,7 +230,8 @@ Exemplos de conteúdo editável diretamente na prévia:
 - título da News Section;
 - label do link “Ver todas”;
 - título da seção do Latest News;
-- título e imagem das matérias do Latest News.
+- título e imagem das matérias do Latest News;
+- título da seção do Featured Authors.
 
 Exemplos de configurações mantidas no Inspector:
 
@@ -234,7 +243,8 @@ Exemplos de configurações mantidas no Inspector:
 - URL do link “Ver todas”;
 - exibição do link “Ver todas”;
 - posição da mídia;
-- tipo, placement e formato do Ad Slot.
+- tipo, placement e formato do Ad Slot;
+- quantidade e seleção dos autores do Featured Authors.
 
 Componentes editoriais reutilizáveis são compartilhados entre os blocos para manter comportamento consistente.
 
@@ -251,6 +261,7 @@ Entre eles:
 - `MediaOverrideControl`
 - `EditorialTextOverrideControl`
 - `EditorialPostSlotControl`
+- `AuthorPicker`
 
 Esses componentes não determinam o layout final dos blocos.
 
@@ -505,9 +516,48 @@ O AdSense Client ID pode ser configurado em **Configurações → WordPress Temp
 
 ---
 
+### Featured Authors
+
+Seção editorial para destacar autores e colunistas reais do WordPress através de curadoria manual.
+
+Características:
+
+- bloco dinâmico;
+- seleção manual e ordenada de autores;
+- quantidade configurável entre 3 e 5 autores;
+- quantidade padrão de 5 autores;
+- prevenção de repetição do mesmo autor dentro da própria ocorrência do bloco;
+- usuários elegíveis precisam possuir ao menos uma matéria `post` publicada;
+- utiliza `display_name` como nome do autor;
+- utiliza a foto editorial fornecida pelo tema quando disponível;
+- utiliza o avatar nativo do WordPress como fallback;
+- utiliza iniciais como fallback visual quando nenhuma imagem está disponível;
+- utiliza o cargo editorial do perfil do autor quando disponível;
+- conta dinamicamente apenas posts `post` publicados;
+- singularização e pluralização de `matéria` e `matérias`;
+- cada card direciona para o archive individual do autor;
+- título padrão `Nossos principais autores`;
+- título da seção customizável inline;
+- link `Ver todas` opcional;
+- URL de `Ver todas` configurada manualmente;
+- responsividade orientada à largura real do próprio bloco com Container Queries;
+- 1 coluna em containers estreitos;
+- 2 colunas a partir de 36rem;
+- 4 colunas a partir de 48rem;
+- em 64rem ou mais, utiliza uma coluna por autor efetivamente renderizado, até o limite de 5;
+- participação automática na hierarquia de headings;
+- não participa da seleção ou deduplicação de matérias;
+- renderização dinâmica em PHP.
+
+O Featured Authors não cria CPT, sistema próprio de usuários, ranking de autores ou contexto global de deduplicação entre blocos de autores.
+
+Os dados editoriais do perfil pertencem ao tema e ao usuário WordPress. O bloco persiste apenas a configuração editorial da ocorrência, como IDs selecionados, quantidade, título e link `Ver todas`. Nome, foto, cargo, archive e contagem de matérias são resolvidos dinamicamente.
+
+---
+
 ## Renderização dinâmica
 
-Os cinco blocos disponíveis atualmente são dinâmicos.
+Os seis blocos disponíveis atualmente são dinâmicos.
 
 O conteúdo final não é salvo como HTML estático no post.
 
@@ -521,6 +571,8 @@ Nos blocos editoriais de notícias, a renderização também é responsável, qu
 - definir a hierarquia semântica.
 
 No Ad Slot, a renderização decide entre anúncio Manual e unidade AdSense e não participa do contexto editorial de posts ou headings.
+
+No Featured Authors, a renderização resolve os usuários selecionados, seus dados editoriais atuais, avatar, contagem de matérias e archive individual. O bloco não participa do contexto editorial de posts.
 
 Os arquivos dentro de `build/` são artefatos gerados e não devem ser editados manualmente.
 
@@ -547,10 +599,12 @@ src/
 │   ├── ad-slot/
 │   ├── breaking-news/
 │   ├── editorial-hero/
+│   ├── featured-authors/
 │   ├── latest-news/
 │   └── news-section/
 │
 ├── components/
+│   ├── author-picker/
 │   ├── category-picker/
 │   ├── editorial-post-slot-control/
 │   ├── editorial-text-override-control/
