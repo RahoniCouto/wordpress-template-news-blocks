@@ -1,0 +1,239 @@
+.wtn-blocks-featured-authors {
+  --wtn-featured-authors-color-text: var(
+    --wp--preset--color--contrast,
+    #111827
+  );
+  --wtn-featured-authors-color-muted: var(--wp--preset--color--muted, #64748b);
+  --wtn-featured-authors-color-primary: var(
+    --wp--preset--color--primary,
+    #1d4ed8
+  );
+  --wtn-featured-authors-color-border: var(
+    --wp--preset--color--border,
+    #e2e8f0
+  );
+  --wtn-featured-authors-color-surface: var(--wp--preset--color--base, #ffffff);
+  --wtn-featured-authors-color-avatar: var(
+    --wp--preset--color--base-2,
+    #f8fafc
+  );
+  --wtn-featured-authors-columns: 5;
+
+  container: wtn-featured-authors / inline-size;
+
+  box-sizing: border-box;
+  display: grid;
+  gap: 1.25rem;
+  width: 100%;
+  color: var(--wtn-featured-authors-color-text);
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: inherit;
+  }
+
+  a {
+    &:focus-visible {
+      outline: 2px solid currentcolor;
+      outline-offset: 3px;
+    }
+  }
+
+  &--count-3 {
+    --wtn-featured-authors-columns: 3;
+  }
+
+  &--count-4 {
+    --wtn-featured-authors-columns: 4;
+  }
+
+  &--count-5 {
+    --wtn-featured-authors-columns: 5;
+  }
+
+  &__header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    align-items: flex-start;
+    justify-content: space-between;
+    min-width: 0;
+  }
+
+  &__section-title {
+    flex: 1 1 12rem;
+    min-width: 0;
+    margin: 0;
+    color: var(--wtn-featured-authors-color-text);
+    font-size: 1.375rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  &__view-all {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    color: var(--wtn-featured-authors-color-primary);
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+  }
+
+  &__items,
+  &__item,
+  &__content {
+    min-width: 0;
+  }
+
+  /*
+   * NARROW.
+   *
+   * Um autor por linha quando o próprio container
+   * ainda não possui largura suficiente para uma grade.
+   */
+  &__items {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__author-card {
+    display: flex;
+    gap: 0.875rem;
+    align-items: center;
+    min-width: 0;
+    height: 100%;
+    padding: 0.875rem;
+    border: 1px solid var(--wtn-featured-authors-color-border);
+    border-radius: 0.625rem;
+    background: var(--wtn-featured-authors-color-surface);
+    color: inherit;
+    text-decoration: none;
+  }
+
+  &__author-card[href] {
+    transition: border-color 160ms ease;
+
+    &:hover,
+    &:focus {
+      border-color: var(--wtn-featured-authors-color-primary);
+    }
+  }
+
+  &__avatar {
+    display: flex;
+    flex: 0 0 3.5rem;
+    align-items: center;
+    justify-content: center;
+    width: 3.5rem;
+    height: 3.5rem;
+    overflow: hidden;
+    border-radius: 50%;
+    background: var(--wtn-featured-authors-color-avatar);
+  }
+
+  &__avatar-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  &__avatar-fallback {
+    color: var(--wtn-featured-authors-color-muted);
+    font-size: 0.875rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    line-height: 1;
+  }
+
+  &__content {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  &__name {
+    color: var(--wtn-featured-authors-color-text);
+    font-size: 0.9375rem;
+    font-weight: 750;
+    line-height: 1.3;
+    overflow-wrap: anywhere;
+  }
+
+  &__role,
+  &__post-count {
+    display: block;
+    margin: 0;
+    color: var(--wtn-featured-authors-color-muted);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+
+  /*
+   * COMPACT.
+   *
+   * A partir de 36rem a seção passa a utilizar
+   * duas colunas.
+   */
+  @container wtn-featured-authors (min-width: 36rem) {
+    &__header {
+      align-items: center;
+    }
+
+    &__items {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+
+    &__author-card {
+      padding: 1rem;
+    }
+  }
+
+  /*
+   * EXPANDED.
+   *
+   * A partir de 48rem a seção utiliza quatro colunas.
+   * Com cinco autores, o quinto inicia uma segunda linha.
+   */
+  @container wtn-featured-authors (min-width: 48rem) {
+    &__items {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /*
+   * WIDE.
+   *
+   * A partir de 64rem a quantidade editorial configurada
+   * determina a grade final, permitindo que todos os autores
+   * ocupem uma única linha.
+   */
+  @container wtn-featured-authors (min-width: 64rem) {
+    &__section-title {
+      font-size: clamp(1.375rem, 2vw, 1.75rem);
+      line-height: 1.15;
+    }
+
+    &__items {
+      grid-template-columns: repeat(
+        var(--wtn-featured-authors-columns),
+        minmax(0, 1fr)
+      );
+    }
+
+    &__author-card {
+      padding: 0.875rem;
+    }
+  }
+}

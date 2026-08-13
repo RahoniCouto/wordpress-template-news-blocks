@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "wtn-blocks/featured-authors",
+  "version": "0.1.0",
+  "title": "Featured Authors",
+  "category": "widgets",
+  "icon": "groups",
+  "description": "Seção editorial para destacar autores e colunistas selecionados.",
+  "textdomain": "wordpress-template-news-blocks",
+  "attributes": {
+    "authorIds": {
+      "type": "array",
+      "default": [0, 0, 0, 0, 0]
+    },
+    "authorCount": {
+      "type": "number",
+      "default": 5
+    },
+    "titleOverride": {
+      "type": "string",
+      "default": ""
+    },
+    "showViewAll": {
+      "type": "boolean",
+      "default": false
+    },
+    "viewAllUrl": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": ["wide"]
+  },
+  "editorScript": "file:./index.js",
+  "style": "file:./style-index.css",
+  "editorStyle": "file:./index.css",
+  "render": "file:./render.php"
+}
