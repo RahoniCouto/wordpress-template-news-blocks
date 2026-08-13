@@ -74,13 +74,6 @@
     font-weight: 700;
     line-height: 1.2;
     text-decoration: none;
-
-    &:hover,
-    &:focus {
-      text-decoration: underline;
-      text-decoration-thickness: 0.08em;
-      text-underline-offset: 0.18em;
-    }
   }
 
   &__items,
@@ -125,13 +118,6 @@
     line-height: 1.2;
     text-decoration: none;
     text-transform: uppercase;
-
-    &[href]:hover,
-    &[href]:focus {
-      text-decoration: underline;
-      text-decoration-thickness: 0.08em;
-      text-underline-offset: 0.18em;
-    }
   }
 
   &__title {
@@ -146,13 +132,6 @@
     a {
       color: inherit;
       text-decoration: none;
-
-      &:hover,
-      &:focus {
-        text-decoration: underline;
-        text-decoration-thickness: 0.08em;
-        text-underline-offset: 0.16em;
-      }
     }
   }
 
