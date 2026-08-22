@@ -1,5 +1,8 @@
 .wtn-blocks-media-override-control {
   position: relative;
+  container: wtn-media-override-control / inline-size;
+  min-width: 0;
+  max-width: 100%;
 
   &__loading {
     display: flex;
@@ -14,7 +17,10 @@
   &__trigger {
     position: relative;
     display: block;
+    box-sizing: border-box;
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
     height: 100%;
     min-height: inherit;
     padding: 0;
@@ -47,13 +53,19 @@
     font-size: 0.8125rem;
     font-weight: 700;
     line-height: 1.2;
+    overflow-wrap: anywhere;
+    text-align: center;
+    white-space: normal;
     opacity: 0;
     transition: opacity 160ms ease;
   }
 
-  &__trigger:hover &__overlay,
-  &__trigger:focus &__overlay {
+  &:hover &__overlay,
+  &:focus-within &__overlay,
+  &:hover &__reset,
+  &:focus-within &__reset {
     opacity: 1;
+    pointer-events: auto;
   }
 
   &__placeholder {
@@ -61,7 +73,10 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
     height: 100%;
     min-height: inherit;
     padding: 2rem;
@@ -69,36 +84,97 @@
     border-radius: 0;
     background: #f6f7f7;
     color: #1e1e1e;
+    font: inherit;
+    line-height: 1.4;
     text-align: center;
     white-space: normal;
+    cursor: pointer;
   }
 
   &__placeholder-title {
     display: block;
+    width: 100%;
+    min-width: 0;
     font-weight: 700;
+    overflow-wrap: anywhere;
   }
 
   &__placeholder-help {
     display: block;
+    width: 100%;
+    min-width: 0;
     max-width: 24rem;
     margin-top: 0.5rem;
     color: #646970;
     font-size: 0.8125rem;
     font-weight: 400;
     line-height: 1.4;
+    overflow-wrap: anywhere;
   }
 
   &__reset {
     position: absolute;
-    inset-inline-start: 1rem;
+    inset-inline-end: 1rem;
     top: 1rem;
     z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: calc(100% - 2rem);
+    height: auto;
     padding: 0.35rem 0.6rem;
+    border: 0;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.92);
+    background: rgba(17, 24, 39, 0.82);
     box-shadow: 0 0.5rem 1.5rem rgba(15, 23, 42, 0.16);
+    color: #ffffff;
+    cursor: pointer;
+    font-family: inherit;
     font-size: 0.75rem;
     font-weight: 700;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+    text-align: center;
     text-decoration: none;
+    white-space: normal;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      background-color 160ms ease,
+      opacity 160ms ease;
+  }
+
+  &__reset:hover,
+  &__reset:focus-visible {
+    background: rgba(127, 29, 29, 0.92);
+  }
+
+  @container wtn-media-override-control (max-width: 18rem) {
+    &__placeholder {
+      min-height: 100%;
+      padding: 0.75rem;
+    }
+
+    &__placeholder-help {
+      display: none;
+    }
+
+    &__overlay {
+      inset-inline: 0.35rem;
+      bottom: 0.35rem;
+      max-width: calc(100% - 0.7rem);
+      padding: 0.35rem 0.5rem;
+      font-size: 0.6875rem;
+    }
+
+    &__reset {
+      inset-inline-end: 0.35rem;
+      top: 0.35rem;
+      max-width: calc(100% - 0.7rem);
+      padding: 0.25rem 0.4rem;
+      font-size: 0.6875rem;
+    }
   }
 }

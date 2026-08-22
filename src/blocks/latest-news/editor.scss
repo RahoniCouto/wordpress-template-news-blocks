@@ -22,36 +22,5 @@
       font-size: 0.8125rem;
       line-height: 1.4;
     }
-
-    &--vertical {
-      .wtn-blocks-media-override-control {
-        &__placeholder {
-          min-height: 100%;
-          padding: 0.5rem;
-        }
-
-        &__placeholder-help {
-          display: none;
-        }
-
-        &__overlay {
-          inset-inline: 0.35rem;
-          bottom: 0.35rem;
-          max-width: calc(100% - 0.7rem);
-          padding: 0.35rem 0.5rem;
-          font-size: 0.6875rem;
-        }
-
-        &__reset {
-          inset-inline-start: 0.35rem;
-          top: 0.35rem;
-          max-width: calc(100% - 0.7rem);
-          padding: 0.25rem 0.4rem;
-          font-size: 0.6875rem;
-          line-height: 1.2;
-          white-space: normal;
-        }
-      }
-    }
   }
 }
