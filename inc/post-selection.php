@@ -61,15 +61,17 @@ function wtn_blocks_is_selectable_post(int $post_id, int $category_id = 0): bool
  *
  * In manual mode, only explicitly selected valid posts are returned.
  *
- * @param string $selection_mode Selection mode: automatic or manual.
- * @param int    $category_id    Optional category ID.
- * @param int[]  $slot_post_ids  Manual post IDs indexed by slot.
+ * @param string $selection_mode    Selection mode: automatic or manual.
+ * @param int    $category_id       Optional category ID.
+ * @param int[]  $slot_post_ids     Manual post IDs indexed by slot.
+ * @param int[]  $excluded_post_ids Post IDs excluded from this resolution.
  * @return array<int, int>
  */
 function wtn_blocks_resolve_news_section_posts(
     string $selection_mode,
     int $category_id,
-    array $slot_post_ids
+    array $slot_post_ids,
+    array $excluded_post_ids
 ): array {
     $selection_mode = in_array($selection_mode, ['automatic', 'manual'], true)
         ? $selection_mode
@@ -83,12 +85,10 @@ function wtn_blocks_resolve_news_section_posts(
         4
     );
 
-    $used_post_ids = wtn_blocks_get_used_post_ids();
-
-    $used_post_ids = array_values(
+    $excluded_post_ids = array_values(
         array_unique(
             array_filter(
-                array_map('absint', $used_post_ids)
+                array_map('absint', $excluded_post_ids)
             )
         )
     );
@@ -108,7 +108,7 @@ function wtn_blocks_resolve_news_section_posts(
 
         $seen_manual_ids[] = $post_id;
 
-        if (in_array($post_id, $used_post_ids, true)) {
+        if (in_array($post_id, $excluded_post_ids, true)) {
             continue;
         }
 
@@ -135,10 +135,10 @@ function wtn_blocks_resolve_news_section_posts(
         return $resolved_posts;
     }
 
-    $excluded_post_ids = array_values(
+    $query_excluded_post_ids = array_values(
         array_unique(
             array_merge(
-                $used_post_ids,
+                $excluded_post_ids,
                 $reserved_posts
             )
         )
@@ -152,7 +152,7 @@ function wtn_blocks_resolve_news_section_posts(
             'date' => 'DESC',
             'ID'   => 'DESC',
         ],
-        'post__not_in'           => $excluded_post_ids,
+        'post__not_in'           => $query_excluded_post_ids,
         'ignore_sticky_posts'    => true,
         'no_found_rows'          => true,
         'update_post_meta_cache' => false,
@@ -184,19 +184,20 @@ function wtn_blocks_resolve_news_section_posts(
  * Resolves the posts used by a Latest News block.
  *
  * Latest News is exclusively automatic. It returns the newest eligible
- * published posts that have not already been consumed by previous editorial
- * blocks in the current render pass.
+ * published posts that are not present in the provided exclusion list.
  *
  * The resolver only selects posts. It does not register them as consumed;
  * registration belongs to the block render after the posts are actually used.
  *
- * @param int $category_id Optional category ID.
- * @param int $post_count  Number of posts to resolve. Allowed values: 3, 4 or 5.
+ * @param int   $category_id       Optional category ID.
+ * @param int   $post_count        Number of posts to resolve. Allowed values: 3, 4 or 5.
+ * @param int[] $excluded_post_ids Post IDs excluded from this resolution.
  * @return array<int, int>
  */
 function wtn_blocks_resolve_latest_news_posts(
     int $category_id,
-    int $post_count
+    int $post_count,
+    array $excluded_post_ids
 ): array {
     $category_id = absint($category_id);
 
@@ -204,12 +205,10 @@ function wtn_blocks_resolve_latest_news_posts(
         ? $post_count
         : 4;
 
-    $used_post_ids = wtn_blocks_get_used_post_ids();
-
-    $used_post_ids = array_values(
+    $excluded_post_ids = array_values(
         array_unique(
             array_filter(
-                array_map('absint', $used_post_ids)
+                array_map('absint', $excluded_post_ids)
             )
         )
     );
@@ -229,8 +228,8 @@ function wtn_blocks_resolve_latest_news_posts(
         'fields'                 => 'ids',
     ];
 
-    if (! empty($used_post_ids)) {
-        $query_args['post__not_in'] = $used_post_ids;
+    if (! empty($excluded_post_ids)) {
+        $query_args['post__not_in'] = $excluded_post_ids;
     }
 
     if ($category_id > 0) {

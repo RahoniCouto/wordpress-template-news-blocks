@@ -307,6 +307,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		resolvedPosts,
 		slotSources,
 		isResolving: isResolvingPosts,
+		hasError: hasResolutionError,
 	} = useNewsSectionPosts( {
 		categoryId: normalizedCategoryId,
 		selectionMode,
@@ -315,7 +316,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	} );
 
 	useEffect( () => {
-		if ( isResolvingPosts ) {
+		if ( isResolvingPosts || hasResolutionError ) {
 			return;
 		}
 
@@ -330,6 +331,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		} );
 	}, [
 		computedResolvedPostIds,
+		hasResolutionError,
 		isResolvingPosts,
 		localResolvedPostIds,
 		setAttributes,
@@ -640,19 +642,30 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					</div>
 				) }
 
-				{ ! isResolvingPosts && ! featuredPost && (
-					<Notice status="warning" isDismissible={ false }>
-						{ selectionMode === 'manual'
-							? __(
-									'Defina a matéria de destaque para visualizar a seção. Sem destaque, o bloco não será exibido no frontend.',
-									'wordpress-template-news-blocks'
-							  )
-							: __(
-									'Nenhuma matéria disponível pôde ser resolvida para o destaque desta seção.',
-									'wordpress-template-news-blocks'
-							  ) }
+				{ hasResolutionError && (
+					<Notice status="error" isDismissible={ false }>
+						{ __(
+							'Não foi possível resolver as matérias desta seção. Tente novamente ou recarregue o editor.',
+							'wordpress-template-news-blocks'
+						) }
 					</Notice>
 				) }
+
+				{ ! isResolvingPosts &&
+					! hasResolutionError &&
+					! featuredPost && (
+						<Notice status="warning" isDismissible={ false }>
+							{ selectionMode === 'manual'
+								? __(
+										'Defina a matéria de destaque para visualizar a seção. Sem destaque, o bloco não será exibido no frontend.',
+										'wordpress-template-news-blocks'
+								  )
+								: __(
+										'Nenhuma matéria disponível pôde ser resolvida para o destaque desta seção.',
+										'wordpress-template-news-blocks'
+								  ) }
+						</Notice>
+					) }
 
 				{ featuredPost && featuredPostId > 0 && (
 					<>

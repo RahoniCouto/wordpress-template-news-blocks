@@ -27,6 +27,7 @@ require_once WTN_BLOCKS_PATH . 'inc/heading-context.php';
 require_once WTN_BLOCKS_PATH . 'inc/post-context.php';
 require_once WTN_BLOCKS_PATH . 'inc/post-selection.php';
 require_once WTN_BLOCKS_PATH . 'inc/editorial-post-overrides.php';
+require_once WTN_BLOCKS_PATH . 'inc/rest/editorial-post-selection.php';
 require_once WTN_BLOCKS_PATH . 'inc/blocks.php';
 
 add_action('plugins_loaded', 'wtn_blocks_setup');
@@ -36,6 +37,11 @@ add_filter('block_editor_settings_all', 'wtn_blocks_add_block_editor_settings');
 
 add_action('init', 'wtn_blocks_register_reading_time_meta');
 add_action('init', 'wtn_blocks_register_blocks');
+
+add_action(
+    'rest_api_init',
+    'wtn_blocks_register_editorial_post_selection_routes'
+);
 
 add_action(
     'wp_after_insert_post',

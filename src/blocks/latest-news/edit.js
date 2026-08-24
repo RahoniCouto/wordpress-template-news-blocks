@@ -207,6 +207,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		resolvedPostIds: computedResolvedPostIds,
 		resolvedPosts,
 		isResolving: isResolvingPosts,
+		hasError: hasResolutionError,
 	} = useLatestNewsPosts( {
 		categoryId: normalizedCategoryId,
 		postCount: normalizedPostCount,
@@ -214,7 +215,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	} );
 
 	useEffect( () => {
-		if ( isResolvingPosts ) {
+		if ( isResolvingPosts || hasResolutionError ) {
 			return;
 		}
 
@@ -231,6 +232,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		} );
 	}, [
 		computedResolvedPostIds,
+		hasResolutionError,
 		isResolvingPosts,
 		localResolvedPostIds,
 		setAttributes,
@@ -487,14 +489,25 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					</div>
 				) }
 
-				{ ! isResolvingPosts && ! hasResolvedPosts && (
-					<Notice status="warning" isDismissible={ false }>
+				{ hasResolutionError && (
+					<Notice status="error" isDismissible={ false }>
 						{ __(
-							'Nenhuma notícia elegível está disponível para esta configuração. O bloco não será exibido no frontend enquanto permanecer vazio.',
+							'Não foi possível resolver as notícias deste bloco. Tente novamente ou recarregue o editor.',
 							'wordpress-template-news-blocks'
 						) }
 					</Notice>
 				) }
+
+				{ ! isResolvingPosts &&
+					! hasResolutionError &&
+					! hasResolvedPosts && (
+						<Notice status="warning" isDismissible={ false }>
+							{ __(
+								'Nenhuma notícia elegível está disponível para esta configuração. O bloco não será exibido no frontend enquanto permanecer vazio.',
+								'wordpress-template-news-blocks'
+							) }
+						</Notice>
+					) }
 
 				{ hasResolvedPosts && (
 					<div className="wtn-blocks-latest-news__items">

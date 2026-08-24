@@ -1,6 +1,7 @@
+import apiFetch from '@wordpress/api-fetch';
 import { store as coreStore } from '@wordpress/core-data';
 import { useSelect } from '@wordpress/data';
-import { useMemo } from '@wordpress/element';
+import { useEffect, useMemo, useState } from '@wordpress/element';
 
 function normalizePostCount( postCount = 4 ) {
 	const normalizedPostCount = Number( postCount ) || 0;
@@ -24,25 +25,6 @@ function normalizePostIds( postIds = [] ) {
 	];
 }
 
-function sortPostsByDateAndId( posts = [] ) {
-	return [ ...posts ].sort( ( firstPost, secondPost ) => {
-		const firstDate =
-			typeof firstPost?.date === 'string' ? firstPost.date : '';
-
-		const secondDate =
-			typeof secondPost?.date === 'string' ? secondPost.date : '';
-
-		if ( firstDate !== secondDate ) {
-			return firstDate < secondDate ? 1 : -1;
-		}
-
-		const firstPostId = Number( firstPost?.id ) || 0;
-		const secondPostId = Number( secondPost?.id ) || 0;
-
-		return secondPostId - firstPostId;
-	} );
-}
-
 export default function useLatestNewsPosts( {
 	categoryId = 0,
 	postCount = 4,
@@ -56,56 +38,117 @@ export default function useLatestNewsPosts( {
 		[ excludePostIds ]
 	);
 
-	const latestNewsQuery = useMemo( () => {
-		const query = {
-			per_page: normalizedPostCount,
+	const requestData = useMemo(
+		() => ( {
+			categoryId: normalizedCategoryId,
+			postCount: normalizedPostCount,
+			excludedPostIds: normalizedExcludedPostIds,
+		} ),
+		[ normalizedCategoryId, normalizedExcludedPostIds, normalizedPostCount ]
+	);
+
+	const [ resolution, setResolution ] = useState( {
+		resolvedPostIds: [],
+		isResolving: true,
+		hasError: false,
+	} );
+
+	useEffect( () => {
+		let isActive = true;
+
+		setResolution( {
+			resolvedPostIds: [],
+			isResolving: true,
+			hasError: false,
+		} );
+
+		apiFetch( {
+			path: '/wtn-blocks/v1/latest-news/resolve',
+			method: 'POST',
+			data: requestData,
+		} )
+			.then( ( response ) => {
+				if ( ! isActive ) {
+					return;
+				}
+
+				setResolution( {
+					resolvedPostIds: normalizePostIds(
+						response?.postIds
+					).slice( 0, normalizedPostCount ),
+					isResolving: false,
+					hasError: false,
+				} );
+			} )
+			.catch( () => {
+				if ( ! isActive ) {
+					return;
+				}
+
+				setResolution( {
+					resolvedPostIds: [],
+					isResolving: false,
+					hasError: true,
+				} );
+			} );
+
+		return () => {
+			isActive = false;
+		};
+	}, [ normalizedPostCount, requestData ] );
+
+	const resolvedPostIds = resolution.resolvedPostIds;
+
+	const postsQuery = useMemo( () => {
+		if ( resolvedPostIds.length === 0 ) {
+			return null;
+		}
+
+		return {
+			include: resolvedPostIds,
+			per_page: resolvedPostIds.length,
 			status: 'publish',
-			orderby: 'date',
-			order: 'desc',
+			orderby: 'include',
 			_fields: 'id,title,featured_media,status,categories,date,link',
 		};
+	}, [ resolvedPostIds ] );
 
-		if ( normalizedExcludedPostIds.length > 0 ) {
-			query.exclude = normalizedExcludedPostIds;
-		}
-
-		if ( normalizedCategoryId > 0 ) {
-			query.categories = [ normalizedCategoryId ];
-		}
-
-		return query;
-	}, [
-		normalizedCategoryId,
-		normalizedExcludedPostIds,
-		normalizedPostCount,
-	] );
-
-	return useSelect(
+	const { resolvedPosts, isResolvingPostData } = useSelect(
 		( select ) => {
+			if ( ! postsQuery ) {
+				return {
+					resolvedPosts: [],
+					isResolvingPostData: false,
+				};
+			}
+
 			const core = select( coreStore );
-			const entityRecordsArgs = [ 'postType', 'post', latestNewsQuery ];
 
-			const queriedPosts =
-				core.getEntityRecords( ...entityRecordsArgs ) || [];
+			const entityRecordsArgs = [ 'postType', 'post', postsQuery ];
 
-			const isResolving = ! core.hasFinishedResolution(
-				'getEntityRecords',
-				entityRecordsArgs
-			);
+			const posts = core.getEntityRecords( ...entityRecordsArgs ) || [];
 
-			const resolvedPosts = sortPostsByDateAndId( queriedPosts ).slice(
-				0,
-				normalizedPostCount
+			const postsById = new Map(
+				posts.map( ( post ) => [ Number( post.id ), post ] )
 			);
 
 			return {
-				resolvedPostIds: resolvedPosts
-					.map( ( post ) => Number( post.id ) || 0 )
-					.filter( ( postId ) => postId > 0 ),
-				resolvedPosts,
-				isResolving,
+				resolvedPosts: resolvedPostIds
+					.map( ( postId ) => postsById.get( postId ) || null )
+					.filter( Boolean ),
+				isResolvingPostData: ! core.hasFinishedResolution(
+					'getEntityRecords',
+					entityRecordsArgs
+				),
 			};
 		},
-		[ latestNewsQuery, normalizedPostCount ]
+		[ postsQuery, resolvedPostIds ]
 	);
+
+	return {
+		resolvedPostIds,
+		resolvedPosts,
+		isResolving: resolution.isResolving || isResolvingPostData,
+		hasError: resolution.hasError,
+	};
 }

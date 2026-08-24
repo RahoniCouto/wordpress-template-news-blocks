@@ -43,9 +43,12 @@ $post_overrides = is_array($block_attributes['postOverrides'])
     ? $block_attributes['postOverrides']
     : [];
 
+$excluded_post_ids = wtn_blocks_get_used_post_ids();
+
 $resolved_post_ids = wtn_blocks_resolve_latest_news_posts(
     $category_id,
-    $post_count
+    $post_count,
+    $excluded_post_ids
 );
 
 $resolved_post_ids = array_slice(
