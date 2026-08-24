@@ -323,8 +323,6 @@ Características:
 
 O label é um elemento visual/editorial e não participa da hierarquia semântica de headings.
 
-Blocos antigos com `titleOverride` continuam compatíveis durante a migração para `postOverrides`.
-
 ---
 
 ### News Section

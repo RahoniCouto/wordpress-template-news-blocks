@@ -6,6 +6,8 @@ import { useMemo, useState } from '@wordpress/element';
 import { decodeEntities } from '@wordpress/html-entities';
 import { __ } from '@wordpress/i18n';
 
+import './editor.scss';
+
 function getCategoryLabel( category ) {
 	if ( ! category?.name ) {
 		return __( 'Categoria sem nome', 'wordpress-template-news-blocks' );
