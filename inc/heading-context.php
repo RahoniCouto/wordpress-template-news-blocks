@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Editorial heading context.
  *
@@ -11,11 +12,14 @@ if (! defined('ABSPATH')) {
 
 /**
  * Resets the editorial heading context for the current render pass.
+ *
+ * @param bool $main_heading_consumed Whether the template already rendered
+ *                                    the page's main heading before the_content.
  */
-function wtn_blocks_reset_heading_context(): void
+function wtn_blocks_reset_heading_context(bool $main_heading_consumed = false): void
 {
     $GLOBALS['wtn_blocks_heading_context'] = [
-        'main_heading_consumed' => false,
+        'main_heading_consumed' => $main_heading_consumed,
     ];
 }
 
@@ -38,13 +42,20 @@ function wtn_blocks_ensure_heading_context(): void
  * WordPress runs do_blocks() on the_content before normal paragraph filters,
  * so this reset must happen earlier than block rendering.
  *
+ * Singular posts and pages already receive their H1 from the theme template.
+ * The static front page is the exception: its template renders block content
+ * without a separate page title so the first editorial block may own the H1.
+ *
  * @param string $content Post content.
  * @return string
  */
 function wtn_blocks_reset_heading_context_before_content(string $content): string
 {
     if (! is_admin()) {
-        wtn_blocks_reset_heading_context();
+        $template_has_main_heading = is_singular(['post', 'page'])
+            && ! is_front_page();
+
+        wtn_blocks_reset_heading_context($template_has_main_heading);
     }
 
     return $content;

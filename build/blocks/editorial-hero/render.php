@@ -13,17 +13,9 @@ if (! defined('ABSPATH')) {
 $block_attributes = wp_parse_args(
     $attributes ?? [],
     [
-        'postId'          => 0,
-        'postOverrides'   => [],
-        'mediaPosition'   => 'left',
-
-        /*
-         * Legacy attributes kept temporarily for blocks created before
-         * postOverrides became the canonical editorial override model.
-         */
-        'titleOverride'   => '',
-        'excerptOverride' => '',
-        'imageOverrideId' => 0,
+        'postId'        => 0,
+        'postOverrides' => [],
+        'mediaPosition' => 'left',
     ]
 );
 
@@ -71,16 +63,9 @@ $post_overrides = is_array($block_attributes['postOverrides'])
     ? $block_attributes['postOverrides']
     : [];
 
-$legacy_override = [
-    'titleOverride'   => $block_attributes['titleOverride'],
-    'excerptOverride' => $block_attributes['excerptOverride'],
-    'imageOverrideId' => $block_attributes['imageOverrideId'],
-];
-
 $post_override = wtn_blocks_get_editorial_post_override(
     $post_overrides,
-    $post_id,
-    $legacy_override
+    $post_id
 );
 
 $title = trim(
@@ -132,12 +117,27 @@ $image_size = function_exists('has_image_size')
 $image_html = '';
 
 if ($image_id > 0) {
+    $image_alt = trim(
+        wp_strip_all_tags(
+            (string) get_post_meta(
+                $image_id,
+                '_wp_attachment_image_alt',
+                true
+            )
+        )
+    );
+
+    if ('' === $image_alt) {
+        $image_alt = $title;
+    }
+
     $image_html = wp_get_attachment_image(
         $image_id,
         $image_size,
         false,
         [
             'class'         => 'wtn-blocks-editorial-hero__image',
+            'alt'           => $image_alt,
             'loading'       => 'eager',
             'decoding'      => 'async',
             'fetchpriority' => 'high',
@@ -177,6 +177,12 @@ $heading_tag = function_exists('wtn_blocks_sanitize_heading_tag')
 
 $heading_tag = tag_escape($heading_tag);
 
+$media_label = sprintf(
+    /* translators: %s: Post title. */
+    __('Abrir matéria: %s', 'wordpress-template-news-blocks'),
+    $title
+);
+
 $wrapper_classes = [
     'wtn-blocks-editorial-hero',
     'wtn-blocks-editorial-hero--media-' . $media_position,
@@ -199,7 +205,8 @@ $wrapper_attributes = get_block_wrapper_attributes(
         <?php if ('' !== $image_html) : ?>
             <a
                 class="wtn-blocks-editorial-hero__media"
-                href="<?php echo esc_url($permalink); ?>">
+                href="<?php echo esc_url($permalink); ?>"
+                aria-label="<?php echo esc_attr($media_label); ?>">
                 <?php echo $image_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
                 ?>
             </a>

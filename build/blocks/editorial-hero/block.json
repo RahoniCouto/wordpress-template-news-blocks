@@ -20,18 +20,6 @@
     "mediaPosition": {
       "type": "string",
       "default": "left"
-    },
-    "titleOverride": {
-      "type": "string",
-      "default": ""
-    },
-    "excerptOverride": {
-      "type": "string",
-      "default": ""
-    },
-    "imageOverrideId": {
-      "type": "number",
-      "default": 0
     }
   },
   "supports": {

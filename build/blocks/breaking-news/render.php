@@ -16,12 +16,6 @@ $block_attributes = wp_parse_args(
         'postId'        => 0,
         'postOverrides' => [],
         'label'         => 'Breaking News',
-
-        /*
-         * Legacy attribute kept temporarily for blocks created before
-         * postOverrides became the canonical editorial override model.
-         */
-        'titleOverride' => '',
     ]
 );
 
@@ -61,21 +55,10 @@ $post_overrides = is_array($block_attributes['postOverrides'])
     ? $block_attributes['postOverrides']
     : [];
 
-$legacy_override = [
-    'titleOverride' => $block_attributes['titleOverride'],
-];
-
-$post_override = function_exists('wtn_blocks_get_editorial_post_override')
-    ? wtn_blocks_get_editorial_post_override(
-        $post_overrides,
-        $post_id,
-        $legacy_override
-    )
-    : [
-        'titleOverride'   => (string) $block_attributes['titleOverride'],
-        'excerptOverride' => '',
-        'imageOverrideId' => 0,
-    ];
+$post_override = wtn_blocks_get_editorial_post_override(
+    $post_overrides,
+    $post_id
+);
 
 $title = trim(
     wp_strip_all_tags(

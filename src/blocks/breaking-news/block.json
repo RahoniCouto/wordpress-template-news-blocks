@@ -20,10 +20,6 @@
     "label": {
       "type": "string",
       "default": "Breaking News"
-    },
-    "titleOverride": {
-      "type": "string",
-      "default": ""
     }
   },
   "supports": {

@@ -115,15 +115,6 @@ if ($show_view_all) {
     }
 }
 
-/**
- * Resolves the category displayed by a horizontal Latest News item.
- *
- * When the block is tied to a category, that category has priority.
- * Otherwise the first category assigned to the post is used.
- *
- * @param int $post_id Post ID.
- * @return WP_Term|null
- */
 $get_post_category = static function (int $post_id) use ($section_category): ?WP_Term {
     if ($section_category instanceof WP_Term) {
         return $section_category;
@@ -141,12 +132,6 @@ $get_post_category = static function (int $post_id) use ($section_category): ?WP
     return $categories[0];
 };
 
-/**
- * Builds render data for one Latest News post.
- *
- * @param int $post_id Post ID.
- * @return array<string, mixed>|null
- */
 $get_post_render_data = static function (int $post_id) use (
     $post_overrides,
     $get_post_category
@@ -224,18 +209,33 @@ $get_post_render_data = static function (int $post_id) use (
     $image_html = '';
 
     if ($image_id > 0) {
+        $image_alt = trim(
+            wp_strip_all_tags(
+                (string) get_post_meta(
+                    $image_id,
+                    '_wp_attachment_image_alt',
+                    true
+                )
+            )
+        );
+
+        if ('' === $image_alt) {
+            $image_alt = $title;
+        }
+
         $image_html = wp_get_attachment_image(
             $image_id,
             $image_size,
             false,
             [
                 'class'    => 'wtn-blocks-latest-news__image',
+                'alt'      => $image_alt,
                 'decoding' => 'async',
             ]
         );
     }
 
-    $category     = $get_post_category($post_id);
+    $category = $get_post_category($post_id);
     $category_url = '';
 
     if ($category instanceof WP_Term) {
@@ -336,11 +336,6 @@ $wrapper_attributes = get_block_wrapper_attributes(
     ]
 );
 
-/**
- * Renders the category for a horizontal Latest News item.
- *
- * @param array<string, mixed> $post_data Post render data.
- */
 $render_category = static function (array $post_data): void {
     if (! $post_data['category'] instanceof WP_Term) {
         return;
@@ -354,7 +349,6 @@ $render_category = static function (array $post_data): void {
             <?php echo esc_html($post_data['category']->name); ?>
         </a>
     <?php
-
         return;
     }
     ?>
@@ -365,8 +359,7 @@ $render_category = static function (array $post_data): void {
 };
 ?>
 
-<section <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-            ?>>
+<section <?php echo $wrapper_attributes; ?>>
     <header class="wtn-blocks-latest-news__header">
         <<?php echo esc_html($section_heading_tag); ?> class="wtn-blocks-latest-news__section-title">
             <?php echo esc_html($section_title); ?>
@@ -398,7 +391,6 @@ $render_category = static function (array $post_data): void {
             }
 
             $media_label = sprintf(
-                /* translators: %s: post title. */
                 __(
                     'Abrir matéria: %s',
                     'wordpress-template-news-blocks'
@@ -413,8 +405,7 @@ $render_category = static function (array $post_data): void {
                         class="wtn-blocks-latest-news__media"
                         href="<?php echo esc_url($post_data['permalink']); ?>"
                         aria-label="<?php echo esc_attr($media_label); ?>">
-                        <?php echo $post_data['image_html']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-                        ?>
+                        <?php echo $post_data['image_html']; ?>
                     </a>
                 <?php endif; ?>
 

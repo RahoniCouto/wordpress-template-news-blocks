@@ -148,83 +148,6 @@ if (
     );
 }
 
-/**
- * Returns an estimated reading-time label for a post.
- *
- * This intentionally mirrors the editor calculation: approximately
- * 200 words per minute with a minimum of one minute.
- *
- * @param WP_Post $post Post object.
- * @return string
- */
-$get_reading_time_label = static function (WP_Post $post): string {
-    $content = (string) $post->post_content;
-
-    /*
-     * Remove Gutenberg comments before counting words so block names and
-     * serialized block attributes are not included in the estimate.
-     */
-    $content = preg_replace(
-        '/<!--\s*\/?wp:[\s\S]*?-->/',
-        ' ',
-        $content
-    );
-
-    if (! is_string($content)) {
-        $content = '';
-    }
-
-    $content = strip_shortcodes($content);
-
-    $content = wp_strip_all_tags(
-        $content,
-        true
-    );
-
-    $content = html_entity_decode(
-        $content,
-        ENT_QUOTES | ENT_HTML5,
-        get_bloginfo('charset') ?: 'UTF-8'
-    );
-
-    $matches = [];
-
-    preg_match_all(
-        '/\p{L}+/u',
-        $content,
-        $matches
-    );
-
-    $word_count = isset($matches[0])
-        ? count($matches[0])
-        : 0;
-
-    $minutes = max(
-        1,
-        (int) ceil($word_count / 200)
-    );
-
-    return sprintf(
-        /* translators: %d: estimated reading time in minutes. */
-        _n(
-            '%d min de leitura',
-            '%d min de leitura',
-            $minutes,
-            'wordpress-template-news-blocks'
-        ),
-        $minutes
-    );
-};
-
-/**
- * Resolves the category displayed by an editorial card.
- *
- * When the News Section is tied to a category, that category has priority.
- * Otherwise the first category assigned to the post is used.
- *
- * @param int $post_id Post ID.
- * @return WP_Term|null
- */
 $get_post_category = static function (int $post_id) use ($section_category): ?WP_Term {
     if ($section_category instanceof WP_Term) {
         return $section_category;
@@ -242,20 +165,12 @@ $get_post_category = static function (int $post_id) use ($section_category): ?WP
     return $categories[0];
 };
 
-/**
- * Builds the render data for one News Section post.
- *
- * @param int  $post_id     Post ID.
- * @param bool $is_featured Whether the post is the featured slot.
- * @return array<string, mixed>|null
- */
 $get_post_render_data = static function (
     int $post_id,
     bool $is_featured
 ) use (
     $post_overrides,
-    $get_post_category,
-    $get_reading_time_label
+    $get_post_category
 ): ?array {
     $post_id = absint($post_id);
 
@@ -357,6 +272,20 @@ $get_post_render_data = static function (
     $image_html = '';
 
     if ($image_id > 0) {
+        $image_alt = trim(
+            wp_strip_all_tags(
+                (string) get_post_meta(
+                    $image_id,
+                    '_wp_attachment_image_alt',
+                    true
+                )
+            )
+        );
+
+        if ('' === $image_alt) {
+            $image_alt = $title;
+        }
+
         $image_html = wp_get_attachment_image(
             $image_id,
             $image_size,
@@ -365,6 +294,7 @@ $get_post_render_data = static function (
                 'class'    => $is_featured
                     ? 'wtn-blocks-news-section__featured-image'
                     : 'wtn-blocks-news-section__secondary-image',
+                'alt'      => $image_alt,
                 'decoding' => 'async',
                 'sizes'    => $is_featured
                     ? '(min-width: 782px) 55vw, 100vw'
@@ -394,7 +324,7 @@ $get_post_render_data = static function (
         'category_url' => $category_url,
         'date'         => get_the_date('', $post),
         'date_w3c'     => get_the_date(DATE_W3C, $post),
-        'reading_time' => $get_reading_time_label($post),
+        'reading_time' => wtn_blocks_get_reading_time_label($post_id),
     ];
 };
 
@@ -434,17 +364,6 @@ if (function_exists('wtn_blocks_register_used_post_ids')) {
     wtn_blocks_register_used_post_ids($consumed_post_ids);
 }
 
-/*
- * Heading policy:
- *
- * - With a section title:
- *   section title consumes the next editorial heading (H1/H2)
- *   and post titles are one level below it.
- *
- * - Without a section title:
- *   the featured post consumes the next editorial heading
- *   and secondary posts are one level below the featured post.
- */
 if ('' !== $section_title) {
     $section_heading_tag = function_exists('wtn_blocks_get_next_editorial_heading_tag')
         ? wtn_blocks_get_next_editorial_heading_tag()
@@ -477,10 +396,6 @@ $secondary_heading_tag = function_exists('wtn_blocks_sanitize_heading_tag')
     ? wtn_blocks_sanitize_heading_tag($secondary_heading_tag)
     : $secondary_heading_tag;
 
-/*
- * When the section itself owns the heading, featured and secondary titles
- * are siblings at the same semantic level.
- */
 if ('' !== $section_heading_tag) {
     $secondary_heading_tag = $post_heading_tag;
 }
@@ -516,7 +431,6 @@ if ('' === $featured_post['image_html']) {
 }
 
 $featured_media_label = sprintf(
-    /* translators: %s: post title. */
     __('Abrir matéria: %s', 'wordpress-template-news-blocks'),
     $featured_post['title']
 );
@@ -537,7 +451,6 @@ $render_category = static function (
             <?php echo esc_html($post_data['category']->name); ?>
         </a>
     <?php
-
         return;
     }
     ?>
@@ -561,16 +474,17 @@ $render_meta = static function (
             </time>
         <?php endif; ?>
 
-        <span class="<?php echo esc_attr($class_prefix . '-meta-item'); ?>">
-            <?php echo esc_html($post_data['reading_time']); ?>
-        </span>
+        <?php if ('' !== $post_data['reading_time']) : ?>
+            <span class="<?php echo esc_attr($class_prefix . '-meta-item'); ?>">
+                <?php echo esc_html($post_data['reading_time']); ?>
+            </span>
+        <?php endif; ?>
     </div>
 <?php
 };
 ?>
 
-<section <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-            ?>>
+<section <?php echo $wrapper_attributes; ?>>
     <?php if ('' !== $section_title || '' !== $view_all_url) : ?>
         <header class="wtn-blocks-news-section__header">
             <?php if ('' !== $section_title) : ?>
@@ -603,8 +517,7 @@ $render_meta = static function (
                 class="wtn-blocks-news-section__featured-media"
                 href="<?php echo esc_url($featured_post['permalink']); ?>"
                 aria-label="<?php echo esc_attr($featured_media_label); ?>">
-                <?php echo $featured_post['image_html']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-                ?>
+                <?php echo $featured_post['image_html']; ?>
             </a>
         <?php endif; ?>
 
@@ -650,7 +563,6 @@ $render_meta = static function (
                 }
 
                 $secondary_media_label = sprintf(
-                    /* translators: %s: post title. */
                     __('Abrir matéria: %s', 'wordpress-template-news-blocks'),
                     $secondary_post['title']
                 );
@@ -662,8 +574,7 @@ $render_meta = static function (
                             class="wtn-blocks-news-section__secondary-media"
                             href="<?php echo esc_url($secondary_post['permalink']); ?>"
                             aria-label="<?php echo esc_attr($secondary_media_label); ?>">
-                            <?php echo $secondary_post['image_html']; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-                            ?>
+                            <?php echo $secondary_post['image_html']; ?>
                         </a>
                     <?php endif; ?>
 

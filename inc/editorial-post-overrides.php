@@ -40,32 +40,21 @@ function wtn_blocks_normalize_editorial_post_override($post_override): array
 /**
  * Returns the editorial overrides associated with a post.
  *
- * The legacy override is used only when the new postOverrides map does not
- * contain an entry for the requested post.
- *
- * @param array<mixed> $post_overrides  Overrides indexed by post ID.
- * @param int          $post_id         Post ID.
- * @param array<mixed> $legacy_override Optional legacy block-level override.
+ * @param array<mixed> $post_overrides Overrides indexed by post ID.
+ * @param int          $post_id        Post ID.
  * @return array<string, mixed>
  */
 function wtn_blocks_get_editorial_post_override(
     array $post_overrides,
-    int $post_id,
-    array $legacy_override = []
+    int $post_id
 ): array {
     $post_id = absint($post_id);
 
-    if (0 === $post_id) {
+    if (0 === $post_id || ! array_key_exists($post_id, $post_overrides)) {
         return wtn_blocks_normalize_editorial_post_override([]);
     }
 
-    if (array_key_exists($post_id, $post_overrides)) {
-        return wtn_blocks_normalize_editorial_post_override(
-            $post_overrides[$post_id]
-        );
-    }
-
     return wtn_blocks_normalize_editorial_post_override(
-        $legacy_override
+        $post_overrides[$post_id]
     );
 }

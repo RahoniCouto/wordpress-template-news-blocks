@@ -294,8 +294,6 @@ Características:
 - participação automática na hierarquia de headings;
 - renderização dinâmica em PHP.
 
-Blocos antigos que utilizavam atributos individuais de override continuam possuindo compatibilidade durante a migração para `postOverrides`.
-
 ---
 
 ### Breaking News

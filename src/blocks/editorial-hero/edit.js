@@ -1,10 +1,10 @@
 import { InspectorControls, useBlockProps } from '@wordpress/block-editor';
 import {
-	Notice,
-	PanelBody,
-	Placeholder,
-	RadioControl,
-	Spinner,
+  Notice,
+  PanelBody,
+  Placeholder,
+  RadioControl,
+  Spinner,
 } from '@wordpress/components';
 import { store as coreStore } from '@wordpress/core-data';
 import { dateI18n, getSettings } from '@wordpress/date';
@@ -17,407 +17,340 @@ import MediaOverrideControl from '../../components/media-override-control';
 import PostPicker from '../../components/post-picker';
 import usePreviousEditorialPostIds from '../../hooks/use-previous-editorial-post-ids';
 import {
-	getPostOverride,
-	isPostOverrideEmpty,
-	normalizePostOverride,
-	sanitizeEditorialText,
-	updatePostOverrides,
+  getPostOverride,
+  sanitizeEditorialText,
+  updatePostOverrides,
 } from '../../utils/editorial-post-overrides';
 
-function getPostTitle( post ) {
-	if ( ! post?.title?.rendered ) {
-		return __( 'Matéria sem título', 'wordpress-template-news-blocks' );
-	}
+function getPostTitle(post) {
+  if (!post?.title?.rendered) {
+    return __('Matéria sem título', 'wordpress-template-news-blocks');
+  }
 
-	return decodeEntities( sanitizeEditorialText( post.title.rendered ) );
+  return decodeEntities(sanitizeEditorialText(post.title.rendered));
 }
 
-function getPostExcerpt( post ) {
-	if ( ! post?.excerpt?.rendered ) {
-		return '';
-	}
+function getPostExcerpt(post) {
+  if (!post?.excerpt?.rendered) {
+    return '';
+  }
 
-	return decodeEntities( sanitizeEditorialText( post.excerpt.rendered ) );
+  return decodeEntities(sanitizeEditorialText(post.excerpt.rendered));
 }
 
-export default function Edit( { attributes, setAttributes, clientId } ) {
-	const {
-		postId = 0,
-		postOverrides = {},
-		mediaPosition = 'left',
-		titleOverride = '',
-		excerptOverride = '',
-		imageOverrideId = 0,
-	} = attributes;
+export default function Edit({ attributes, setAttributes, clientId }) {
+  const { postId = 0, postOverrides = {}, mediaPosition = 'left' } = attributes;
 
-	const normalizedPostId = Number( postId ) || 0;
+  const normalizedPostId = Number(postId) || 0;
 
-	const normalizedPostOverrides =
-		postOverrides &&
-		typeof postOverrides === 'object' &&
-		! Array.isArray( postOverrides )
-			? postOverrides
-			: {};
+  const normalizedPostOverrides =
+    postOverrides &&
+    typeof postOverrides === 'object' &&
+    !Array.isArray(postOverrides)
+      ? postOverrides
+      : {};
 
-	const legacyPostOverride = normalizePostOverride( {
-		titleOverride,
-		excerptOverride,
-		imageOverrideId,
-	} );
+  const currentPostOverride = getPostOverride(
+    normalizedPostOverrides,
+    normalizedPostId,
+  );
 
-	const hasStoredPostOverride =
-		normalizedPostId > 0 &&
-		Object.prototype.hasOwnProperty.call(
-			normalizedPostOverrides,
-			String( normalizedPostId )
-		);
+  const previousEditorialPostIds = usePreviousEditorialPostIds(clientId);
 
-	const currentPostOverride = hasStoredPostOverride
-		? getPostOverride( normalizedPostOverrides, normalizedPostId )
-		: legacyPostOverride;
+  const hasPostConflict =
+    normalizedPostId > 0 && previousEditorialPostIds.includes(normalizedPostId);
 
-	const previousEditorialPostIds = usePreviousEditorialPostIds( clientId );
+  const { selectedPost, isResolvingPost } = useSelect(
+    (select) => {
+      const core = select(coreStore);
 
-	const hasPostConflict =
-		normalizedPostId > 0 &&
-		previousEditorialPostIds.includes( normalizedPostId );
+      return {
+        selectedPost: normalizedPostId
+          ? core.getEntityRecord('postType', 'post', normalizedPostId)
+          : null,
+        isResolvingPost: normalizedPostId
+          ? core.isResolving('getEntityRecord', [
+              'postType',
+              'post',
+              normalizedPostId,
+            ])
+          : false,
+      };
+    },
+    [normalizedPostId],
+  );
 
-	const { selectedPost, isResolvingPost } = useSelect(
-		( select ) => {
-			const core = select( coreStore );
+  const featuredImageId = Number(selectedPost?.featured_media) || 0;
 
-			return {
-				selectedPost: normalizedPostId
-					? core.getEntityRecord(
-							'postType',
-							'post',
-							normalizedPostId
-					  )
-					: null,
-				isResolvingPost: normalizedPostId
-					? core.isResolving( 'getEntityRecord', [
-							'postType',
-							'post',
-							normalizedPostId,
-					  ] )
-					: false,
-			};
-		},
-		[ normalizedPostId ]
-	);
+  const categoryId = Number(selectedPost?.categories?.[0]) || 0;
 
-	const featuredImageId = Number( selectedPost?.featured_media ) || 0;
+  const category = useSelect(
+    (select) => {
+      if (!categoryId) {
+        return null;
+      }
 
-	const categoryId = Number( selectedPost?.categories?.[ 0 ] ) || 0;
+      return select(coreStore).getEntityRecord(
+        'taxonomy',
+        'category',
+        categoryId,
+      );
+    },
+    [categoryId],
+  );
 
-	const category = useSelect(
-		( select ) => {
-			if ( ! categoryId ) {
-				return null;
-			}
+  const fallbackTitle = getPostTitle(selectedPost);
+  const fallbackExcerpt = getPostExcerpt(selectedPost);
 
-			return select( coreStore ).getEntityRecord(
-				'taxonomy',
-				'category',
-				categoryId
-			);
-		},
-		[ categoryId ]
-	);
+  const formattedDate = selectedPost?.date
+    ? dateI18n(getSettings().formats.date, selectedPost.date)
+    : '';
 
-	const fallbackTitle = getPostTitle( selectedPost );
-	const fallbackExcerpt = getPostExcerpt( selectedPost );
+  const blockProps = useBlockProps({
+    className: [
+      'wtn-blocks-editorial-hero',
+      `wtn-blocks-editorial-hero--media-${mediaPosition}`,
+    ]
+      .filter(Boolean)
+      .join(' '),
+  });
 
-	const formattedDate = selectedPost?.date
-		? dateI18n( getSettings().formats.date, selectedPost.date )
-		: '';
+  const handlePostChange = (nextPostId) => {
+    const normalizedNextPostId = Number(nextPostId) || 0;
 
-	const blockProps = useBlockProps( {
-		className: [
-			'wtn-blocks-editorial-hero',
-			`wtn-blocks-editorial-hero--media-${ mediaPosition }`,
-		]
-			.filter( Boolean )
-			.join( ' ' ),
-	} );
+    setAttributes({
+      postId: normalizedNextPostId,
+    });
+  };
 
-	const migrateLegacyOverride = () => {
-		if (
-			normalizedPostId <= 0 ||
-			hasStoredPostOverride ||
-			isPostOverrideEmpty( legacyPostOverride )
-		) {
-			return normalizedPostOverrides;
-		}
+  const updateCurrentPostOverride = (nextPostOverride) => {
+    if (normalizedPostId <= 0) {
+      return;
+    }
 
-		return updatePostOverrides(
-			normalizedPostOverrides,
-			normalizedPostId,
-			legacyPostOverride
-		);
-	};
+    setAttributes({
+      postOverrides: updatePostOverrides(
+        normalizedPostOverrides,
+        normalizedPostId,
+        nextPostOverride,
+      ),
+    });
+  };
 
-	const handlePostChange = ( nextPostId ) => {
-		const normalizedNextPostId = Number( nextPostId ) || 0;
+  const inspectorControls = (
+    <InspectorControls>
+      <PanelBody
+        title={__('Matéria', 'wordpress-template-news-blocks')}
+        initialOpen
+      >
+        <PostPicker
+          value={normalizedPostId}
+          excludePostIds={previousEditorialPostIds}
+          onChange={handlePostChange}
+        />
 
-		const nextPostOverrides = migrateLegacyOverride();
+        {hasPostConflict && (
+          <Notice status="warning" isDismissible={false}>
+            {__(
+              'Esta matéria já é utilizada por um bloco editorial anterior. No frontend, este Editorial Hero não será exibido enquanto houver o conflito.',
+              'wordpress-template-news-blocks',
+            )}
+          </Notice>
+        )}
+      </PanelBody>
 
-		setAttributes( {
-			postId: normalizedNextPostId,
-			postOverrides: nextPostOverrides,
-			titleOverride: '',
-			excerptOverride: '',
-			imageOverrideId: 0,
-		} );
-	};
+      <PanelBody
+        title={__('Layout', 'wordpress-template-news-blocks')}
+        initialOpen={false}
+      >
+        <RadioControl
+          label={__('Posição da imagem', 'wordpress-template-news-blocks')}
+          selected={mediaPosition}
+          options={[
+            {
+              label: __('Esquerda', 'wordpress-template-news-blocks'),
+              value: 'left',
+            },
+            {
+              label: __('Direita', 'wordpress-template-news-blocks'),
+              value: 'right',
+            },
+          ]}
+          onChange={(nextPosition) => {
+            setAttributes({
+              mediaPosition: nextPosition,
+            });
+          }}
+          help={__(
+            'No mobile, a imagem sempre aparece acima do conteúdo.',
+            'wordpress-template-news-blocks',
+          )}
+        />
+      </PanelBody>
 
-	const updateCurrentPostOverride = ( nextPostOverride ) => {
-		if ( normalizedPostId <= 0 ) {
-			return;
-		}
+      <PanelBody
+        title={__('Ajuda', 'wordpress-template-news-blocks')}
+        initialOpen={false}
+      >
+        <p className="wtn-blocks-editorial-hero__inspector-help">
+          {__(
+            'Edite o título, a chamada e a imagem diretamente na prévia do bloco.',
+            'wordpress-template-news-blocks',
+          )}
+        </p>
 
-		setAttributes( {
-			postOverrides: updatePostOverrides(
-				normalizedPostOverrides,
-				normalizedPostId,
-				nextPostOverride
-			),
-			titleOverride: '',
-			excerptOverride: '',
-			imageOverrideId: 0,
-		} );
-	};
+        <p className="wtn-blocks-editorial-hero__inspector-help">
+          {__(
+            'No frontend, o primeiro bloco editorial principal usa H1 automaticamente. Os demais usam H2.',
+            'wordpress-template-news-blocks',
+          )}
+        </p>
+      </PanelBody>
+    </InspectorControls>
+  );
 
-	const inspectorControls = (
-		<InspectorControls>
-			<PanelBody
-				title={ __( 'Matéria', 'wordpress-template-news-blocks' ) }
-				initialOpen
-			>
-				<PostPicker
-					value={ normalizedPostId }
-					excludePostIds={ previousEditorialPostIds }
-					onChange={ handlePostChange }
-				/>
+  if (!normalizedPostId) {
+    return (
+      <>
+        {inspectorControls}
 
-				{ hasPostConflict && (
-					<Notice status="warning" isDismissible={ false }>
-						{ __(
-							'Esta matéria já é utilizada por um bloco editorial anterior. No frontend, este Editorial Hero não será exibido enquanto houver o conflito.',
-							'wordpress-template-news-blocks'
-						) }
-					</Notice>
-				) }
-			</PanelBody>
+        <div {...blockProps}>
+          <Placeholder
+            icon="cover-image"
+            label={__('Editorial Hero', 'wordpress-template-news-blocks')}
+            instructions={__(
+              'Selecione manualmente a matéria principal que será exibida neste Hero.',
+              'wordpress-template-news-blocks',
+            )}
+          >
+            <PostPicker
+              value={normalizedPostId}
+              excludePostIds={previousEditorialPostIds}
+              onChange={handlePostChange}
+            />
+          </Placeholder>
+        </div>
+      </>
+    );
+  }
 
-			<PanelBody
-				title={ __( 'Layout', 'wordpress-template-news-blocks' ) }
-				initialOpen={ false }
-			>
-				<RadioControl
-					label={ __(
-						'Posição da imagem',
-						'wordpress-template-news-blocks'
-					) }
-					selected={ mediaPosition }
-					options={ [
-						{
-							label: __(
-								'Esquerda',
-								'wordpress-template-news-blocks'
-							),
-							value: 'left',
-						},
-						{
-							label: __(
-								'Direita',
-								'wordpress-template-news-blocks'
-							),
-							value: 'right',
-						},
-					] }
-					onChange={ ( nextPosition ) => {
-						setAttributes( {
-							mediaPosition: nextPosition,
-						} );
-					} }
-					help={ __(
-						'No mobile, a imagem sempre aparece acima do conteúdo.',
-						'wordpress-template-news-blocks'
-					) }
-				/>
-			</PanelBody>
+  if (isResolvingPost && !selectedPost) {
+    return (
+      <>
+        {inspectorControls}
 
-			<PanelBody
-				title={ __( 'Ajuda', 'wordpress-template-news-blocks' ) }
-				initialOpen={ false }
-			>
-				<p className="wtn-blocks-editorial-hero__inspector-help">
-					{ __(
-						'Edite o título, a chamada e a imagem diretamente na prévia do bloco.',
-						'wordpress-template-news-blocks'
-					) }
-				</p>
+        <div {...blockProps}>
+          <div className="wtn-blocks-editorial-hero__editor-loading">
+            <Spinner />
+          </div>
+        </div>
+      </>
+    );
+  }
 
-				<p className="wtn-blocks-editorial-hero__inspector-help">
-					{ __(
-						'No frontend, o primeiro bloco editorial principal usa H1 automaticamente. Os demais usam H2.',
-						'wordpress-template-news-blocks'
-					) }
-				</p>
-			</PanelBody>
-		</InspectorControls>
-	);
+  if (!selectedPost) {
+    return (
+      <>
+        {inspectorControls}
 
-	if ( ! normalizedPostId ) {
-		return (
-			<>
-				{ inspectorControls }
+        <div {...blockProps}>
+          <Notice status="warning" isDismissible={false}>
+            {__(
+              'A matéria selecionada não foi encontrada ou não está disponível.',
+              'wordpress-template-news-blocks',
+            )}
+          </Notice>
+        </div>
+      </>
+    );
+  }
 
-				<div { ...blockProps }>
-					<Placeholder
-						icon="cover-image"
-						label={ __(
-							'Editorial Hero',
-							'wordpress-template-news-blocks'
-						) }
-						instructions={ __(
-							'Selecione manualmente a matéria principal que será exibida neste Hero.',
-							'wordpress-template-news-blocks'
-						) }
-					>
-						<PostPicker
-							value={ normalizedPostId }
-							excludePostIds={ previousEditorialPostIds }
-							onChange={ handlePostChange }
-						/>
-					</Placeholder>
-				</div>
-			</>
-		);
-	}
+  return (
+    <>
+      {inspectorControls}
 
-	if ( isResolvingPost && ! selectedPost ) {
-		return (
-			<>
-				{ inspectorControls }
+      <div {...blockProps}>
+        <div className="wtn-blocks-editorial-hero__inner">
+          <MediaOverrideControl
+            value={currentPostOverride.imageOverrideId}
+            fallbackMediaId={featuredImageId}
+            onChange={(nextImageOverrideId) => {
+              updateCurrentPostOverride({
+                ...currentPostOverride,
+                imageOverrideId: Number(nextImageOverrideId) || 0,
+              });
+            }}
+            className="wtn-blocks-editorial-hero__media"
+            imageClassName="wtn-blocks-editorial-hero__image"
+            changeImageLabel={__(
+              'Alterar imagem do Hero',
+              'wordpress-template-news-blocks',
+            )}
+            placeholderLabel={__(
+              'Escolher imagem para o Hero',
+              'wordpress-template-news-blocks',
+            )}
+            placeholderHelp={__(
+              'Esta matéria não tem imagem destacada. Escolha uma imagem customizada ou o frontend exibirá o Hero sem mídia.',
+              'wordpress-template-news-blocks',
+            )}
+          />
 
-				<div { ...blockProps }>
-					<div className="wtn-blocks-editorial-hero__editor-loading">
-						<Spinner />
-					</div>
-				</div>
-			</>
-		);
-	}
+          <div className="wtn-blocks-editorial-hero__content">
+            <p className="wtn-blocks-editorial-hero__eyebrow">
+              {__('Destaque', 'wordpress-template-news-blocks')}
+            </p>
 
-	if ( ! selectedPost ) {
-		return (
-			<>
-				{ inspectorControls }
+            <EditorialTextOverrideControl
+              tagName="div"
+              className="wtn-blocks-editorial-hero__title"
+              value={currentPostOverride.titleOverride}
+              fallbackValue={fallbackTitle}
+              onChange={(nextTitleOverride) => {
+                updateCurrentPostOverride({
+                  ...currentPostOverride,
+                  titleOverride: nextTitleOverride,
+                });
+              }}
+              placeholder={__(
+                'Escreva um título para o Hero',
+                'wordpress-template-news-blocks',
+              )}
+            />
 
-				<div { ...blockProps }>
-					<Notice status="warning" isDismissible={ false }>
-						{ __(
-							'A matéria selecionada não foi encontrada ou não está disponível.',
-							'wordpress-template-news-blocks'
-						) }
-					</Notice>
-				</div>
-			</>
-		);
-	}
+            <EditorialTextOverrideControl
+              tagName="p"
+              className="wtn-blocks-editorial-hero__excerpt"
+              value={currentPostOverride.excerptOverride}
+              fallbackValue={fallbackExcerpt}
+              onChange={(nextExcerptOverride) => {
+                updateCurrentPostOverride({
+                  ...currentPostOverride,
+                  excerptOverride: nextExcerptOverride,
+                });
+              }}
+              placeholder={__(
+                'Escreva uma chamada para o Hero',
+                'wordpress-template-news-blocks',
+              )}
+            />
 
-	return (
-		<>
-			{ inspectorControls }
+            <div className="wtn-blocks-editorial-hero__meta">
+              {category?.name && (
+                <span className="wtn-blocks-editorial-hero__meta-item">
+                  {decodeEntities(category.name)}
+                </span>
+              )}
 
-			<div { ...blockProps }>
-				<div className="wtn-blocks-editorial-hero__inner">
-					<MediaOverrideControl
-						value={ currentPostOverride.imageOverrideId }
-						fallbackMediaId={ featuredImageId }
-						onChange={ ( nextImageOverrideId ) => {
-							updateCurrentPostOverride( {
-								...currentPostOverride,
-								imageOverrideId:
-									Number( nextImageOverrideId ) || 0,
-							} );
-						} }
-						className="wtn-blocks-editorial-hero__media"
-						imageClassName="wtn-blocks-editorial-hero__image"
-						changeImageLabel={ __(
-							'Alterar imagem do Hero',
-							'wordpress-template-news-blocks'
-						) }
-						placeholderLabel={ __(
-							'Escolher imagem para o Hero',
-							'wordpress-template-news-blocks'
-						) }
-						placeholderHelp={ __(
-							'Esta matéria não tem imagem destacada. Escolha uma imagem customizada ou o frontend exibirá o Hero sem mídia.',
-							'wordpress-template-news-blocks'
-						) }
-					/>
-
-					<div className="wtn-blocks-editorial-hero__content">
-						<p className="wtn-blocks-editorial-hero__eyebrow">
-							{ __(
-								'Destaque',
-								'wordpress-template-news-blocks'
-							) }
-						</p>
-
-						<EditorialTextOverrideControl
-							tagName="div"
-							className="wtn-blocks-editorial-hero__title"
-							value={ currentPostOverride.titleOverride }
-							fallbackValue={ fallbackTitle }
-							onChange={ ( nextTitleOverride ) => {
-								updateCurrentPostOverride( {
-									...currentPostOverride,
-									titleOverride: nextTitleOverride,
-								} );
-							} }
-							placeholder={ __(
-								'Escreva um título para o Hero',
-								'wordpress-template-news-blocks'
-							) }
-						/>
-
-						<EditorialTextOverrideControl
-							tagName="p"
-							className="wtn-blocks-editorial-hero__excerpt"
-							value={ currentPostOverride.excerptOverride }
-							fallbackValue={ fallbackExcerpt }
-							onChange={ ( nextExcerptOverride ) => {
-								updateCurrentPostOverride( {
-									...currentPostOverride,
-									excerptOverride: nextExcerptOverride,
-								} );
-							} }
-							placeholder={ __(
-								'Escreva uma chamada para o Hero',
-								'wordpress-template-news-blocks'
-							) }
-						/>
-
-						<div className="wtn-blocks-editorial-hero__meta">
-							{ category?.name && (
-								<span className="wtn-blocks-editorial-hero__meta-item">
-									{ decodeEntities( category.name ) }
-								</span>
-							) }
-
-							{ formattedDate && (
-								<span className="wtn-blocks-editorial-hero__meta-item">
-									{ formattedDate }
-								</span>
-							) }
-						</div>
-					</div>
-				</div>
-			</div>
-		</>
-	);
+              {formattedDate && (
+                <span className="wtn-blocks-editorial-hero__meta-item">
+                  {formattedDate}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 }
