@@ -180,8 +180,7 @@ $get_author_render_data = static function (int $author_id) use ($get_author_init
         )
     );
 
-    $avatar_image_size = function_exists('has_image_size')
-        && has_image_size('wtn-avatar')
+    $avatar_image_size = has_image_size('wtn-avatar')
         ? 'wtn-avatar'
         : 'thumbnail';
 
@@ -254,13 +253,8 @@ if (empty($resolved_authors)) {
     return;
 }
 
-$section_heading_tag = function_exists('wtn_blocks_get_next_editorial_heading_tag')
-    ? wtn_blocks_get_next_editorial_heading_tag()
-    : 'h2';
-
-$section_heading_tag = function_exists('wtn_blocks_sanitize_heading_tag')
-    ? wtn_blocks_sanitize_heading_tag($section_heading_tag)
-    : $section_heading_tag;
+$section_heading_tag = wtn_blocks_get_next_editorial_heading_tag();
+$section_heading_tag = wtn_blocks_sanitize_heading_tag($section_heading_tag);
 
 $section_heading_tag = tag_escape($section_heading_tag);
 

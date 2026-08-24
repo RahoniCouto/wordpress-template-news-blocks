@@ -113,17 +113,10 @@ if ('manual' === $type) {
         )
     );
 } else {
-    $adsense_client_id = function_exists(
-        'wtn_blocks_get_adsense_client_id'
-    )
-        ? wtn_blocks_get_adsense_client_id()
-        : '';
+    $adsense_client_id = wtn_blocks_get_adsense_client_id();
 
     if (
-        ! function_exists(
-            'wtn_blocks_is_valid_adsense_client_id'
-        )
-        || ! wtn_blocks_is_valid_adsense_client_id(
+        ! wtn_blocks_is_valid_adsense_client_id(
             $adsense_client_id
         )
         || ! is_string(
@@ -162,7 +155,7 @@ $wrapper_attributes = get_block_wrapper_attributes(
 );
 ?>
 
-<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped 
+<div <?php echo $wrapper_attributes; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
         ?>>
     <span class="wtn-blocks-ad-slot__label">
         <?php

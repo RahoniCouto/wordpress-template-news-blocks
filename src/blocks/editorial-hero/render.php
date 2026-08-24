@@ -35,10 +35,7 @@ if (
     return;
 }
 
-if (
-    function_exists('wtn_blocks_is_post_used')
-    && wtn_blocks_is_post_used($post_id)
-) {
+if (wtn_blocks_is_post_used($post_id)) {
     return;
 }
 
@@ -109,8 +106,7 @@ if (0 === $image_id) {
     $image_id = (int) get_post_thumbnail_id($post);
 }
 
-$image_size = function_exists('has_image_size')
-    && has_image_size('wtn-featured')
+$image_size = has_image_size('wtn-featured')
     ? 'wtn-featured'
     : 'large';
 
@@ -163,18 +159,10 @@ if ($primary_category instanceof WP_Term) {
     }
 }
 
-if (function_exists('wtn_blocks_register_used_post_id')) {
-    wtn_blocks_register_used_post_id($post_id);
-}
+wtn_blocks_register_used_post_id($post_id);
 
-$heading_tag = function_exists('wtn_blocks_get_next_editorial_heading_tag')
-    ? wtn_blocks_get_next_editorial_heading_tag()
-    : 'h2';
-
-$heading_tag = function_exists('wtn_blocks_sanitize_heading_tag')
-    ? wtn_blocks_sanitize_heading_tag($heading_tag)
-    : $heading_tag;
-
+$heading_tag = wtn_blocks_get_next_editorial_heading_tag();
+$heading_tag = wtn_blocks_sanitize_heading_tag($heading_tag);
 $heading_tag = tag_escape($heading_tag);
 
 $media_label = sprintf(

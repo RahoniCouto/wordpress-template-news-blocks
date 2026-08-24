@@ -83,9 +83,7 @@ function wtn_blocks_resolve_news_section_posts(
         4
     );
 
-    $used_post_ids = function_exists('wtn_blocks_get_used_post_ids')
-        ? wtn_blocks_get_used_post_ids()
-        : [];
+    $used_post_ids = wtn_blocks_get_used_post_ids();
 
     $used_post_ids = array_values(
         array_unique(
@@ -206,9 +204,7 @@ function wtn_blocks_resolve_latest_news_posts(
         ? $post_count
         : 4;
 
-    $used_post_ids = function_exists('wtn_blocks_get_used_post_ids')
-        ? wtn_blocks_get_used_post_ids()
-        : [];
+    $used_post_ids = wtn_blocks_get_used_post_ids();
 
     $used_post_ids = array_values(
         array_unique(

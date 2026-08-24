@@ -43,12 +43,10 @@ $post_overrides = is_array($block_attributes['postOverrides'])
     ? $block_attributes['postOverrides']
     : [];
 
-$resolved_post_ids = function_exists('wtn_blocks_resolve_latest_news_posts')
-    ? wtn_blocks_resolve_latest_news_posts(
-        $category_id,
-        $post_count
-    )
-    : [];
+$resolved_post_ids = wtn_blocks_resolve_latest_news_posts(
+    $category_id,
+    $post_count
+);
 
 $resolved_post_ids = array_slice(
     array_values(
@@ -161,16 +159,10 @@ $get_post_render_data = static function (int $post_id) use (
         return null;
     }
 
-    $post_override = function_exists('wtn_blocks_get_editorial_post_override')
-        ? wtn_blocks_get_editorial_post_override(
-            $post_overrides,
-            $post_id
-        )
-        : [
-            'titleOverride'   => '',
-            'excerptOverride' => '',
-            'imageOverrideId' => 0,
-        ];
+    $post_override = wtn_blocks_get_editorial_post_override(
+        $post_overrides,
+        $post_id
+    );
 
     $title = trim(
         wp_strip_all_tags(
@@ -201,8 +193,7 @@ $get_post_render_data = static function (int $post_id) use (
         $image_id = (int) get_post_thumbnail_id($post);
     }
 
-    $image_size = function_exists('has_image_size')
-        && has_image_size('wtn-card')
+    $image_size = has_image_size('wtn-card')
         ? 'wtn-card'
         : 'medium_large';
 
@@ -285,33 +276,21 @@ $consumed_post_ids = array_map(
     $resolved_posts
 );
 
-if (function_exists('wtn_blocks_register_used_post_ids')) {
-    wtn_blocks_register_used_post_ids(
-        $consumed_post_ids
-    );
-}
+wtn_blocks_register_used_post_ids(
+    $consumed_post_ids
+);
 
-$section_heading_tag = function_exists('wtn_blocks_get_next_editorial_heading_tag')
-    ? wtn_blocks_get_next_editorial_heading_tag()
-    : 'h2';
+$section_heading_tag = wtn_blocks_get_next_editorial_heading_tag();
+$section_heading_tag = wtn_blocks_sanitize_heading_tag(
+    $section_heading_tag
+);
 
-$section_heading_tag = function_exists('wtn_blocks_sanitize_heading_tag')
-    ? wtn_blocks_sanitize_heading_tag(
-        $section_heading_tag
-    )
-    : $section_heading_tag;
-
-$post_heading_tag = function_exists('wtn_blocks_get_child_heading_tag')
-    ? wtn_blocks_get_child_heading_tag(
-        $section_heading_tag
-    )
-    : 'h3';
-
-$post_heading_tag = function_exists('wtn_blocks_sanitize_heading_tag')
-    ? wtn_blocks_sanitize_heading_tag(
-        $post_heading_tag
-    )
-    : $post_heading_tag;
+$post_heading_tag = wtn_blocks_get_child_heading_tag(
+    $section_heading_tag
+);
+$post_heading_tag = wtn_blocks_sanitize_heading_tag(
+    $post_heading_tag
+);
 
 $section_heading_tag = tag_escape(
     $section_heading_tag
