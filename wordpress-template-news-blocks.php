@@ -27,6 +27,7 @@ require_once WTN_BLOCKS_PATH . 'inc/heading-context.php';
 require_once WTN_BLOCKS_PATH . 'inc/post-context.php';
 require_once WTN_BLOCKS_PATH . 'inc/post-selection.php';
 require_once WTN_BLOCKS_PATH . 'inc/editorial-post-overrides.php';
+require_once WTN_BLOCKS_PATH . 'inc/editorial-post-data.php';
 require_once WTN_BLOCKS_PATH . 'inc/rest/editorial-post-selection.php';
 require_once WTN_BLOCKS_PATH . 'inc/blocks.php';
 

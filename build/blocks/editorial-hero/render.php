@@ -25,13 +25,16 @@ if (0 === $post_id) {
     return;
 }
 
-$post = get_post($post_id);
+$post_overrides = is_array($block_attributes['postOverrides'])
+    ? $block_attributes['postOverrides']
+    : [];
 
-if (
-    ! $post instanceof WP_Post
-    || 'post' !== $post->post_type
-    || 'publish' !== get_post_status($post)
-) {
+$post_data = wtn_blocks_get_editorial_post_data(
+    $post_id,
+    $post_overrides
+);
+
+if (null === $post_data) {
     return;
 }
 
@@ -39,14 +42,10 @@ if (wtn_blocks_is_post_used($post_id)) {
     return;
 }
 
-$permalink = get_permalink($post);
-
-if (
-    ! is_string($permalink)
-    || '' === $permalink
-) {
-    return;
-}
+$post          = $post_data['post'];
+$permalink     = $post_data['permalink'];
+$title         = $post_data['title'];
+$post_override = $post_data['post_override'];
 
 $media_position = in_array(
     $block_attributes['mediaPosition'],
@@ -56,55 +55,19 @@ $media_position = in_array(
     ? $block_attributes['mediaPosition']
     : 'left';
 
-$post_overrides = is_array($block_attributes['postOverrides'])
-    ? $block_attributes['postOverrides']
-    : [];
-
-$post_override = wtn_blocks_get_editorial_post_override(
-    $post_overrides,
-    $post_id
+$excerpt = wtn_blocks_get_editorial_post_excerpt(
+    $post,
+    $post_override
 );
 
-$title = trim(
-    wp_strip_all_tags(
-        (string) $post_override['titleOverride']
-    )
+$image_data = wtn_blocks_get_editorial_post_image_data(
+    $post,
+    $post_override,
+    $title
 );
 
-if ('' === $title) {
-    $title = trim(
-        wp_strip_all_tags(
-            get_the_title($post)
-        )
-    );
-}
-
-if ('' === $title) {
-    $title = __(
-        'Matéria sem título',
-        'wordpress-template-news-blocks'
-    );
-}
-
-$excerpt = trim(
-    wp_strip_all_tags(
-        (string) $post_override['excerptOverride']
-    )
-);
-
-if ('' === $excerpt) {
-    $excerpt = trim(
-        wp_strip_all_tags(
-            get_the_excerpt($post)
-        )
-    );
-}
-
-$image_id = absint($post_override['imageOverrideId']);
-
-if (0 === $image_id) {
-    $image_id = (int) get_post_thumbnail_id($post);
-}
+$image_id  = $image_data['id'];
+$image_alt = $image_data['alt'];
 
 $image_size = has_image_size('wtn-featured')
     ? 'wtn-featured'
@@ -113,20 +76,6 @@ $image_size = has_image_size('wtn-featured')
 $image_html = '';
 
 if ($image_id > 0) {
-    $image_alt = trim(
-        wp_strip_all_tags(
-            (string) get_post_meta(
-                $image_id,
-                '_wp_attachment_image_alt',
-                true
-            )
-        )
-    );
-
-    if ('' === $image_alt) {
-        $image_alt = $title;
-    }
-
     $image_html = wp_get_attachment_image(
         $image_id,
         $image_size,

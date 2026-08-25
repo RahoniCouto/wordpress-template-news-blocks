@@ -20,8 +20,11 @@ import MediaOverrideControl from '../../components/media-override-control';
 import useNewsSectionPosts from '../../hooks/use-news-section-posts';
 import usePreviousEditorialPostIds from '../../hooks/use-previous-editorial-post-ids';
 import {
+	getEditorialPostExcerpt,
+	getEditorialPostTitle,
+} from '../../utils/editorial-post-data';
+import {
 	getPostOverride,
-	sanitizeEditorialText,
 	updatePostOverrides,
 } from '../../utils/editorial-post-overrides';
 
@@ -47,22 +50,6 @@ function arePostIdListsEqual( firstPostIds, secondPostIds ) {
 	return normalizedFirstPostIds.every(
 		( postId, slotIndex ) => postId === normalizedSecondPostIds[ slotIndex ]
 	);
-}
-
-function getPostTitle( post ) {
-	if ( ! post?.title?.rendered ) {
-		return __( 'Matéria sem título', 'wordpress-template-news-blocks' );
-	}
-
-	return decodeEntities( sanitizeEditorialText( post.title.rendered ) );
-}
-
-function getPostExcerpt( post ) {
-	if ( ! post?.excerpt?.rendered ) {
-		return '';
-	}
-
-	return decodeEntities( sanitizeEditorialText( post.excerpt.rendered ) );
 }
 
 function NewsSectionPostEditor( {
@@ -103,8 +90,8 @@ function NewsSectionPostEditor( {
 
 	const featuredImageId = Number( post.featured_media ) || 0;
 
-	const fallbackTitle = getPostTitle( post );
-	const fallbackExcerpt = getPostExcerpt( post );
+	const fallbackTitle = getEditorialPostTitle( post );
+	const fallbackExcerpt = getEditorialPostExcerpt( post );
 
 	const formattedDate = post.date
 		? dateI18n( getSettings().formats.date, post.date )
@@ -235,13 +222,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		[ slotPostIds ]
 	);
 
-	const normalizedPostOverrides =
-		postOverrides &&
-		typeof postOverrides === 'object' &&
-		! Array.isArray( postOverrides )
-			? postOverrides
-			: {};
-
 	const previousEditorialPostIds = usePreviousEditorialPostIds( clientId );
 
 	const configuredSlotPosts = useSelect(
@@ -364,7 +344,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 		setAttributes( {
 			postOverrides: updatePostOverrides(
-				normalizedPostOverrides,
+				postOverrides,
 				normalizedPostId,
 				nextPostOverride
 			),
@@ -673,7 +653,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 							post={ featuredPost }
 							postId={ featuredPostId }
 							postOverride={ getPostOverride(
-								normalizedPostOverrides,
+								postOverrides,
 								featuredPostId
 							) }
 							onChange={ ( nextPostOverride ) => {
@@ -711,7 +691,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 										post={ post }
 										postId={ postId }
 										postOverride={ getPostOverride(
-											normalizedPostOverrides,
+											postOverrides,
 											postId
 										) }
 										onChange={ ( nextPostOverride ) => {

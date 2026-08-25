@@ -17,26 +17,13 @@ import MediaOverrideControl from '../../components/media-override-control';
 import PostPicker from '../../components/post-picker';
 import usePreviousEditorialPostIds from '../../hooks/use-previous-editorial-post-ids';
 import {
+	getEditorialPostExcerpt,
+	getEditorialPostTitle,
+} from '../../utils/editorial-post-data';
+import {
 	getPostOverride,
-	sanitizeEditorialText,
 	updatePostOverrides,
 } from '../../utils/editorial-post-overrides';
-
-function getPostTitle( post ) {
-	if ( ! post?.title?.rendered ) {
-		return __( 'Matéria sem título', 'wordpress-template-news-blocks' );
-	}
-
-	return decodeEntities( sanitizeEditorialText( post.title.rendered ) );
-}
-
-function getPostExcerpt( post ) {
-	if ( ! post?.excerpt?.rendered ) {
-		return '';
-	}
-
-	return decodeEntities( sanitizeEditorialText( post.excerpt.rendered ) );
-}
 
 export default function Edit( { attributes, setAttributes, clientId } ) {
 	const {
@@ -47,15 +34,8 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 	const normalizedPostId = Number( postId ) || 0;
 
-	const normalizedPostOverrides =
-		postOverrides &&
-		typeof postOverrides === 'object' &&
-		! Array.isArray( postOverrides )
-			? postOverrides
-			: {};
-
 	const currentPostOverride = getPostOverride(
-		normalizedPostOverrides,
+		postOverrides,
 		normalizedPostId
 	);
 
@@ -108,8 +88,8 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		[ categoryId ]
 	);
 
-	const fallbackTitle = getPostTitle( selectedPost );
-	const fallbackExcerpt = getPostExcerpt( selectedPost );
+	const fallbackTitle = getEditorialPostTitle( selectedPost );
+	const fallbackExcerpt = getEditorialPostExcerpt( selectedPost );
 
 	const formattedDate = selectedPost?.date
 		? dateI18n( getSettings().formats.date, selectedPost.date )
@@ -139,7 +119,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 		setAttributes( {
 			postOverrides: updatePostOverrides(
-				normalizedPostOverrides,
+				postOverrides,
 				normalizedPostId,
 				nextPostOverride
 			),

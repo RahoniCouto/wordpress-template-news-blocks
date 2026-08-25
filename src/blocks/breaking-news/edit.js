@@ -3,25 +3,16 @@ import { Notice, PanelBody, Placeholder, Spinner } from '@wordpress/components';
 import { store as coreStore } from '@wordpress/core-data';
 import { dateI18n } from '@wordpress/date';
 import { useSelect } from '@wordpress/data';
-import { decodeEntities } from '@wordpress/html-entities';
 import { __, _n, sprintf } from '@wordpress/i18n';
 
 import EditorialTextOverrideControl from '../../components/editorial-text-override-control';
 import PostPicker from '../../components/post-picker';
 import usePreviousEditorialPostIds from '../../hooks/use-previous-editorial-post-ids';
+import { getEditorialPostTitle } from '../../utils/editorial-post-data';
 import {
 	getPostOverride,
-	sanitizeEditorialText,
 	updatePostOverrides,
 } from '../../utils/editorial-post-overrides';
-
-function getPostTitle( post ) {
-	if ( ! post?.title?.rendered ) {
-		return __( 'Matéria sem título', 'wordpress-template-news-blocks' );
-	}
-
-	return decodeEntities( sanitizeEditorialText( post.title.rendered ) );
-}
 
 function getRelativeTimeLabel( dateString ) {
 	if ( ! dateString ) {
@@ -84,13 +75,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	} = attributes;
 
 	const normalizedPostId = Number( postId ) || 0;
-
-	const normalizedPostOverrides =
-		postOverrides &&
-		typeof postOverrides === 'object' &&
-		! Array.isArray( postOverrides )
-			? postOverrides
-			: {};
 
 	const previousEditorialPostIds = usePreviousEditorialPostIds( clientId );
 
@@ -245,11 +229,11 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	}
 
 	const currentPostOverride = getPostOverride(
-		normalizedPostOverrides,
+		postOverrides,
 		normalizedPostId
 	);
 
-	const fallbackTitle = getPostTitle( selectedPost );
+	const fallbackTitle = getEditorialPostTitle( selectedPost );
 
 	const formattedTime = selectedPost.date
 		? getRelativeTimeLabel( selectedPost.date )
@@ -258,7 +242,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 	const updateCurrentPostOverride = ( nextPostOverride ) => {
 		setAttributes( {
 			postOverrides: updatePostOverrides(
-				normalizedPostOverrides,
+				postOverrides,
 				normalizedPostId,
 				nextPostOverride
 			),

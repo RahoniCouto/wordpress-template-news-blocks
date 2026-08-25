@@ -4,9 +4,21 @@ export function sanitizeEditorialText( value = '' ) {
 		.trim();
 }
 
+function normalizePostOverrides( postOverrides = {} ) {
+	return postOverrides &&
+		typeof postOverrides === 'object' &&
+		! Array.isArray( postOverrides )
+		? postOverrides
+		: {};
+}
+
 function normalizePostOverride( postOverride = {} ) {
 	const normalizedPostOverride =
-		postOverride && typeof postOverride === 'object' ? postOverride : {};
+		postOverride &&
+		typeof postOverride === 'object' &&
+		! Array.isArray( postOverride )
+			? postOverride
+			: {};
 
 	return {
 		titleOverride:
@@ -38,8 +50,7 @@ export function getPostOverride( postOverrides = {}, postId = 0 ) {
 		return normalizePostOverride();
 	}
 
-	const normalizedPostOverrides =
-		postOverrides && typeof postOverrides === 'object' ? postOverrides : {};
+	const normalizedPostOverrides = normalizePostOverrides( postOverrides );
 
 	return normalizePostOverride(
 		normalizedPostOverrides[ String( normalizedPostId ) ]
@@ -51,14 +62,12 @@ export function updatePostOverrides(
 	postId = 0,
 	nextPostOverride = {}
 ) {
+	const normalizedPostOverrides = normalizePostOverrides( postOverrides );
 	const normalizedPostId = Number( postId ) || 0;
 
 	if ( ! normalizedPostId ) {
-		return postOverrides;
+		return normalizedPostOverrides;
 	}
-
-	const normalizedPostOverrides =
-		postOverrides && typeof postOverrides === 'object' ? postOverrides : {};
 
 	const normalizedPostOverride = normalizePostOverride( nextPostOverride );
 	const postOverrideKey = String( normalizedPostId );

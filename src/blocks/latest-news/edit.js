@@ -21,9 +21,9 @@ import useLatestNewsPosts from '../../hooks/use-latest-news-posts';
 import usePreviousEditorialPostIds from '../../hooks/use-previous-editorial-post-ids';
 import {
 	getPostOverride,
-	sanitizeEditorialText,
 	updatePostOverrides,
 } from '../../utils/editorial-post-overrides';
+import { getEditorialPostTitle } from '../../utils/editorial-post-data';
 
 function normalizePostCount( postCount = 4 ) {
 	const normalizedPostCount = Number( postCount ) || 0;
@@ -59,14 +59,6 @@ function arePostIdListsEqual( firstPostIds = [], secondPostIds = [] ) {
 	);
 }
 
-function getPostTitle( post ) {
-	if ( ! post?.title?.rendered ) {
-		return __( 'Matéria sem título', 'wordpress-template-news-blocks' );
-	}
-
-	return decodeEntities( sanitizeEditorialText( post.title.rendered ) );
-}
-
 function LatestNewsPostEditor( {
 	post,
 	postOverride,
@@ -95,7 +87,7 @@ function LatestNewsPostEditor( {
 
 	const category = sectionCategory || postCategory;
 	const featuredImageId = Number( post?.featured_media ) || 0;
-	const fallbackTitle = getPostTitle( post );
+	const fallbackTitle = getEditorialPostTitle( post );
 
 	const formattedDate = post?.date
 		? dateI18n( getSettings().formats.date, post.date )
@@ -191,13 +183,6 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		? layoutVariant
 		: 'horizontal';
 
-	const normalizedPostOverrides =
-		postOverrides &&
-		typeof postOverrides === 'object' &&
-		! Array.isArray( postOverrides )
-			? postOverrides
-			: {};
-
 	const normalizedViewAllUrl =
 		typeof viewAllUrl === 'string' ? viewAllUrl.trim() : '';
 
@@ -280,7 +265,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 
 		setAttributes( {
 			postOverrides: updatePostOverrides(
-				normalizedPostOverrides,
+				postOverrides,
 				normalizedPostId,
 				nextPostOverride
 			),
@@ -526,7 +511,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 									key={ postId }
 									post={ post }
 									postOverride={ getPostOverride(
-										normalizedPostOverrides,
+										postOverrides,
 										postId
 									) }
 									onChange={ ( nextPostOverride ) => {

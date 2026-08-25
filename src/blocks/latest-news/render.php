@@ -137,64 +137,29 @@ $get_post_render_data = static function (int $post_id) use (
     $post_overrides,
     $get_post_category
 ): ?array {
-    $post_id = absint($post_id);
+    $post_data = wtn_blocks_get_editorial_post_data(
+        $post_id,
+        $post_overrides
+    );
 
-    if (0 === $post_id) {
+    if (null === $post_data) {
         return null;
     }
 
-    $post = get_post($post_id);
+    $post          = $post_data['post'];
+    $post_id       = $post_data['id'];
+    $permalink     = $post_data['permalink'];
+    $title         = $post_data['title'];
+    $post_override = $post_data['post_override'];
 
-    if (
-        ! $post instanceof WP_Post
-        || 'post' !== $post->post_type
-        || 'publish' !== get_post_status($post)
-    ) {
-        return null;
-    }
-
-    $permalink = get_permalink($post);
-
-    if (
-        ! is_string($permalink)
-        || '' === $permalink
-    ) {
-        return null;
-    }
-
-    $post_override = wtn_blocks_get_editorial_post_override(
-        $post_overrides,
-        $post_id
+    $image_data = wtn_blocks_get_editorial_post_image_data(
+        $post,
+        $post_override,
+        $title
     );
 
-    $title = trim(
-        wp_strip_all_tags(
-            (string) $post_override['titleOverride']
-        )
-    );
-
-    if ('' === $title) {
-        $title = trim(
-            wp_strip_all_tags(
-                get_the_title($post)
-            )
-        );
-    }
-
-    if ('' === $title) {
-        $title = __(
-            'Matéria sem título',
-            'wordpress-template-news-blocks'
-        );
-    }
-
-    $image_id = absint(
-        $post_override['imageOverrideId'] ?? 0
-    );
-
-    if (0 === $image_id) {
-        $image_id = (int) get_post_thumbnail_id($post);
-    }
+    $image_id  = $image_data['id'];
+    $image_alt = $image_data['alt'];
 
     $image_size = has_image_size('wtn-card')
         ? 'wtn-card'
@@ -203,20 +168,6 @@ $get_post_render_data = static function (int $post_id) use (
     $image_html = '';
 
     if ($image_id > 0) {
-        $image_alt = trim(
-            wp_strip_all_tags(
-                (string) get_post_meta(
-                    $image_id,
-                    '_wp_attachment_image_alt',
-                    true
-                )
-            )
-        );
-
-        if ('' === $image_alt) {
-            $image_alt = $title;
-        }
-
         $image_html = wp_get_attachment_image(
             $image_id,
             $image_size,

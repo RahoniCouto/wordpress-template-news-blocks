@@ -25,13 +25,16 @@ if (0 === $post_id) {
     return;
 }
 
-$post = get_post($post_id);
+$post_overrides = is_array($block_attributes['postOverrides'])
+    ? $block_attributes['postOverrides']
+    : [];
 
-if (
-    ! $post instanceof WP_Post
-    || 'post' !== $post->post_type
-    || 'publish' !== get_post_status($post)
-) {
+$post_data = wtn_blocks_get_editorial_post_data(
+    $post_id,
+    $post_overrides
+);
+
+if (null === $post_data) {
     return;
 }
 
@@ -39,44 +42,9 @@ if (wtn_blocks_is_post_used($post_id)) {
     return;
 }
 
-$permalink = get_permalink($post);
-
-if (
-    ! is_string($permalink)
-    || '' === $permalink
-) {
-    return;
-}
-
-$post_overrides = is_array($block_attributes['postOverrides'])
-    ? $block_attributes['postOverrides']
-    : [];
-
-$post_override = wtn_blocks_get_editorial_post_override(
-    $post_overrides,
-    $post_id
-);
-
-$title = trim(
-    wp_strip_all_tags(
-        (string) $post_override['titleOverride']
-    )
-);
-
-if ('' === $title) {
-    $title = trim(
-        wp_strip_all_tags(
-            get_the_title($post)
-        )
-    );
-}
-
-if ('' === $title) {
-    $title = __(
-        'Matéria sem título',
-        'wordpress-template-news-blocks'
-    );
-}
+$post      = $post_data['post'];
+$permalink = $post_data['permalink'];
+$title     = $post_data['title'];
 
 $label = trim(
     wp_strip_all_tags(
