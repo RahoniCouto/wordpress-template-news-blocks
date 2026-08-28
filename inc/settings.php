@@ -218,8 +218,8 @@ function wtn_blocks_render_settings_page(): void
 /**
  * Exposes plugin configuration state to the block editor.
  *
- * The AdSense client ID remains server-side. The editor only
- * receives whether the global configuration is available.
+ * The AdSense client ID remains server-side. The editor receives
+ * only its configuration state and the public Ad Slot format registry.
  *
  * @param array<string, mixed> $editor_settings Block editor settings.
  * @return array<string, mixed>
@@ -233,6 +233,7 @@ function wtn_blocks_add_block_editor_settings(
         'adsenseConfigured' => wtn_blocks_is_valid_adsense_client_id(
             $client_id
         ),
+        'adSlotFormats' => wtn_blocks_get_ad_slot_formats(),
     ];
 
     return $editor_settings;

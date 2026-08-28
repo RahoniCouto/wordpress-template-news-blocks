@@ -14,18 +14,18 @@ Plugin funcional com blocos editoriais dinâmicos já implementados.
 
 Blocos disponíveis:
 
-- Editorial Hero
-- Breaking News
-- News Section
-- Latest News
-- Ad Slot
-- Featured Authors
+-   Editorial Hero
+-   Breaking News
+-   News Section
+-   Latest News
+-   Ad Slot
+-   Featured Authors
 
 Requisitos mínimos:
 
-- WordPress 6.7+
-- PHP 8.1+
-- Node.js compatível com `@wordpress/scripts`
+-   WordPress 6.7+
+-   PHP 8.1+
+-   Node.js compatível com `@wordpress/scripts`
 
 ---
 
@@ -33,30 +33,30 @@ Requisitos mínimos:
 
 O tema `wordpress-template-news` é responsável por:
 
-- templates WordPress;
-- Template Hierarchy;
-- estrutura visual do frontend;
-- estilos globais do tema;
-- `theme.json`;
-- estilos base do editor;
-- suporte ao conteúdo Gutenberg nativo;
-- image sizes específicos quando disponíveis;
-- dados editoriais do perfil de autores utilizados pelos templates e blocos.
+-   templates WordPress;
+-   Template Hierarchy;
+-   estrutura visual do frontend;
+-   estilos globais do tema;
+-   `theme.json`;
+-   estilos base do editor;
+-   suporte ao conteúdo Gutenberg nativo;
+-   image sizes específicos quando disponíveis;
+-   dados editoriais do perfil de autores utilizados pelos templates e blocos.
 
 Este plugin é responsável por:
 
-- blocos Gutenberg editoriais customizados;
-- metadados e atributos dos blocos;
-- experiência de edição;
-- seleção editorial de posts;
-- resolução automática ou manual de conteúdo;
-- prevenção de repetição de matérias entre blocos editoriais;
-- overrides editoriais de título, chamada e imagem;
-- renderização dinâmica;
-- semântica dos headings editoriais;
-- posições publicitárias manuais e AdSense;
-- curadoria de autores WordPress no Featured Authors;
-- assets específicos dos blocos no editor e no frontend.
+-   blocos Gutenberg editoriais customizados;
+-   metadados e atributos dos blocos;
+-   experiência de edição;
+-   seleção editorial de posts;
+-   resolução automática ou manual de conteúdo;
+-   prevenção de repetição de matérias entre blocos editoriais;
+-   overrides editoriais de título, chamada e imagem;
+-   renderização dinâmica;
+-   semântica dos headings editoriais;
+-   posições publicitárias manuais e AdSense;
+-   curadoria de autores WordPress no Featured Authors;
+-   assets específicos dos blocos no editor e no frontend.
 
 Os blocos não dependem de template-parts do tema para renderizar seu conteúdo.
 
@@ -109,10 +109,10 @@ Isso evita que uma customização criada para uma matéria seja aplicada acident
 
 Exemplo:
 
-- post A recebe título e imagem customizados;
-- o bloco passa a exibir o post B;
-- post B utiliza seus próprios valores;
-- se o post A voltar a ser utilizado, seus overrides anteriores voltam com ele.
+-   post A recebe título e imagem customizados;
+-   o bloco passa a exibir o post B;
+-   post B utiliza seus próprios valores;
+-   se o post A voltar a ser utilizado, seus overrides anteriores voltam com ele.
 
 O mesmo contrato é compartilhado pelos blocos editoriais quando aplicável.
 
@@ -126,10 +126,10 @@ Configurações que pertencem ao próprio bloco continuam sendo atributos do blo
 
 Exemplos:
 
-- label do Breaking News;
-- posição da mídia do Editorial Hero;
-- categoria e layout da News Section;
-- categoria, quantidade e layout do Latest News.
+-   label do Breaking News;
+-   posição da mídia do Editorial Hero;
+-   categoria e layout da News Section;
+-   categoria, quantidade e layout do Latest News.
 
 ---
 
@@ -141,17 +141,17 @@ O editor não escolhe manualmente h1, h2 ou h3.
 
 Blocos candidatos atualmente:
 
-- Editorial Hero
-- Breaking News
-- News Section
-- Latest News
-- Featured Authors
+-   Editorial Hero
+-   Breaking News
+-   News Section
+-   Latest News
+-   Featured Authors
 
 A regra geral é:
 
-- o primeiro candidato editorial principal efetivamente renderizado utiliza `h1`;
-- os candidatos principais seguintes utilizam `h2`;
-- títulos internos utilizam níveis derivados automaticamente do heading principal.
+-   o primeiro candidato editorial principal efetivamente renderizado utiliza `h1`;
+-   os candidatos principais seguintes utilizam `h2`;
+-   títulos internos utilizam níveis derivados automaticamente do heading principal.
 
 Isso evita que a hierarquia da página dependa de uma decisão manual do editor.
 
@@ -222,29 +222,29 @@ O plugin segue a seguinte regra de interface:
 
 Exemplos de conteúdo editável diretamente na prévia:
 
-- título de matéria;
-- chamada editorial;
-- imagem editorial;
-- headline do Breaking News;
-- label do Breaking News;
-- título da News Section;
-- label do link “Ver todas”;
-- título da seção do Latest News;
-- título e imagem das matérias do Latest News;
-- título da seção do Featured Authors.
+-   título de matéria;
+-   chamada editorial;
+-   imagem editorial;
+-   headline do Breaking News;
+-   label do Breaking News;
+-   título da News Section;
+-   label do link “Ver todas”;
+-   título da seção do Latest News;
+-   título e imagem das matérias do Latest News;
+-   título da seção do Featured Authors.
 
 Exemplos de configurações mantidas no Inspector:
 
-- seleção de matéria;
-- modo automático ou manual;
-- categoria;
-- layout;
-- quantidade de matérias;
-- URL do link “Ver todas”;
-- exibição do link “Ver todas”;
-- posição da mídia;
-- tipo, placement e formato do Ad Slot;
-- quantidade e seleção dos autores do Featured Authors.
+-   seleção de matéria;
+-   modo automático ou manual;
+-   categoria;
+-   layout;
+-   quantidade de matérias;
+-   URL do link “Ver todas”;
+-   exibição do link “Ver todas”;
+-   posição da mídia;
+-   tipo, placement e formato do Ad Slot;
+-   quantidade e seleção dos autores do Featured Authors.
 
 Componentes editoriais reutilizáveis são compartilhados entre os blocos para manter comportamento consistente.
 
@@ -256,12 +256,12 @@ O plugin possui componentes reutilizáveis para responsabilidades editoriais esp
 
 Entre eles:
 
-- `PostPicker`
-- `CategoryPicker`
-- `MediaOverrideControl`
-- `EditorialTextOverrideControl`
-- `EditorialPostSlotControl`
-- `AuthorPicker`
+-   `PostPicker`
+-   `CategoryPicker`
+-   `MediaOverrideControl`
+-   `EditorialTextOverrideControl`
+-   `EditorialPostSlotControl`
+-   `AuthorPicker`
 
 Esses componentes não determinam o layout final dos blocos.
 
@@ -277,22 +277,22 @@ Bloco editorial de grande destaque.
 
 Características:
 
-- bloco dinâmico;
-- seleção manual de uma matéria;
-- prevenção de repetição com blocos editoriais anteriores;
-- título original como fallback;
-- título customizável inline;
-- chamada original como fallback;
-- chamada customizável inline;
-- imagem destacada como fallback;
-- imagem customizável inline;
-- overrides associados ao ID da matéria;
-- posição da mídia à esquerda ou à direita;
-- link automático para o post;
-- categoria e data da matéria;
-- suporte a `alignwide`;
-- participação automática na hierarquia de headings;
-- renderização dinâmica em PHP.
+-   bloco dinâmico;
+-   seleção manual de uma matéria;
+-   prevenção de repetição com blocos editoriais anteriores;
+-   título original como fallback;
+-   título customizável inline;
+-   chamada original como fallback;
+-   chamada customizável inline;
+-   imagem destacada como fallback;
+-   imagem customizável inline;
+-   overrides associados ao ID da matéria;
+-   posição da mídia à esquerda ou à direita;
+-   link automático para o post;
+-   categoria e data da matéria;
+-   suporte a `alignwide`;
+-   participação automática na hierarquia de headings;
+-   renderização dinâmica em PHP.
 
 ---
 
@@ -302,24 +302,24 @@ Barra editorial de urgência para destacar uma matéria selecionada manualmente.
 
 Características:
 
-- bloco dinâmico;
-- seleção manual de uma matéria;
-- prevenção de repetição com blocos editoriais anteriores;
-- headline original como fallback;
-- headline customizável inline;
-- override associado ao ID da matéria;
-- label padrão `Breaking News`;
-- label customizável inline;
-- link automático para o post;
-- tempo relativo para publicações recentes;
-- data para publicações mais antigas;
-- sem imagem;
-- sem ticker;
-- sem carrossel;
-- sem múltiplos itens;
-- suporte a `alignwide`;
-- participação automática na hierarquia de headings;
-- renderização dinâmica em PHP.
+-   bloco dinâmico;
+-   seleção manual de uma matéria;
+-   prevenção de repetição com blocos editoriais anteriores;
+-   headline original como fallback;
+-   headline customizável inline;
+-   override associado ao ID da matéria;
+-   label padrão `Breaking News`;
+-   label customizável inline;
+-   link automático para o post;
+-   tempo relativo para publicações recentes;
+-   data para publicações mais antigas;
+-   sem imagem;
+-   sem ticker;
+-   sem carrossel;
+-   sem múltiplos itens;
+-   suporte a `alignwide`;
+-   participação automática na hierarquia de headings;
+-   renderização dinâmica em PHP.
 
 O label é um elemento visual/editorial e não participa da hierarquia semântica de headings.
 
@@ -344,19 +344,19 @@ A seção pode ou não estar associada a uma categoria.
 
 Com categoria:
 
-- o nome da categoria é usado como título da seção por padrão;
-- o título pode ser customizado;
-- posts automáticos pertencem à categoria selecionada;
-- substituições manuais também ficam limitadas à categoria;
-- o link “Ver todas” utiliza a archive da categoria por padrão.
+-   o nome da categoria é usado como título da seção por padrão;
+-   o título pode ser customizado;
+-   posts automáticos pertencem à categoria selecionada;
+-   substituições manuais também ficam limitadas à categoria;
+-   o link “Ver todas” utiliza a archive da categoria por padrão.
 
 Sem categoria:
 
-- o título da seção é opcional;
-- posts automáticos podem vir de qualquer categoria;
-- substituições manuais podem utilizar qualquer post elegível;
-- não existe URL automática para “Ver todas”;
-- o editor pode fornecer uma URL manual.
+-   o título da seção é opcional;
+-   posts automáticos podem vir de qualquer categoria;
+-   substituições manuais podem utilizar qualquer post elegível;
+-   não existe URL automática para “Ver todas”;
+-   o editor pode fornecer uma URL manual.
 
 #### Seleção automática
 
@@ -364,8 +364,8 @@ No modo automático, slots sem substituição manual recebem os posts publicados
 
 A ordenação é determinística:
 
-- data decrescente;
-- ID decrescente como critério de desempate.
+-   data decrescente;
+-   ID decrescente como critério de desempate.
 
 Posts utilizados por blocos editoriais anteriores são excluídos da resolução.
 
@@ -381,9 +381,9 @@ A posição dos slots é preservada.
 
 Cada post utilizado pela seção pode possuir:
 
-- título editorial;
-- chamada editorial;
-- imagem editorial.
+-   título editorial;
+-   chamada editorial;
+-   imagem editorial.
 
 Os overrides são associados ao ID da matéria.
 
@@ -397,17 +397,17 @@ A News Section possui duas variações visuais.
 
 **Layout 1**
 
-- imagem da matéria principal à esquerda;
-- conteúdo principal à direita;
-- três matérias secundárias;
-- composição adaptada conforme a largura disponível.
+-   imagem da matéria principal à esquerda;
+-   conteúdo principal à direita;
+-   três matérias secundárias;
+-   composição adaptada conforme a largura disponível.
 
 **Layout 2**
 
-- conteúdo da matéria principal à esquerda;
-- imagem principal à direita;
-- três matérias secundárias;
-- composição adaptada conforme a largura disponível.
+-   conteúdo da matéria principal à esquerda;
+-   imagem principal à direita;
+-   três matérias secundárias;
+-   composição adaptada conforme a largura disponível.
 
 Os dois layouts respondem à largura real disponível no próprio bloco utilizando Container Queries, sem depender de uma composição estrutural específica da página.
 
@@ -421,10 +421,10 @@ Ele não representa a fonte de verdade do frontend e não deve ser persistido co
 
 No frontend, os posts são resolvidos novamente a partir de:
 
-- categoria;
-- modo de seleção;
-- slots configurados;
-- posts já consumidos anteriormente.
+-   categoria;
+-   modo de seleção;
+-   slots configurados;
+-   posts já consumidos anteriormente.
 
 ---
 
@@ -434,26 +434,26 @@ Listagem cronológica de notícias recentes com seleção exclusivamente automá
 
 Características:
 
-- bloco dinâmico;
-- quantidade configurável entre 3 e 5 matérias;
-- quantidade padrão de 4 matérias;
-- categoria opcional;
-- posts recentes ordenados por data e ID de forma determinística;
-- prevenção de repetição com blocos editoriais anteriores;
-- título padrão `Últimas notícias` quando não existe categoria;
-- nome da categoria como título padrão quando uma categoria está definida;
-- título da seção customizável inline;
-- título das matérias customizável inline;
-- imagem editorial customizável por matéria;
-- overrides associados ao ID da matéria;
-- link `Ver todas` opcional;
-- archive da categoria como destino automático quando existe categoria;
-- URL manual para `Ver todas` quando não existe categoria;
-- layout Horizontal;
-- layout Vertical;
-- responsividade interna orientada à largura do próprio bloco com Container Queries;
-- participação automática na hierarquia de headings;
-- renderização dinâmica em PHP.
+-   bloco dinâmico;
+-   quantidade configurável entre 3 e 5 matérias;
+-   quantidade padrão de 4 matérias;
+-   categoria opcional;
+-   posts recentes ordenados por data e ID de forma determinística;
+-   prevenção de repetição com blocos editoriais anteriores;
+-   título padrão `Últimas notícias` quando não existe categoria;
+-   nome da categoria como título padrão quando uma categoria está definida;
+-   título da seção customizável inline;
+-   título das matérias customizável inline;
+-   imagem editorial customizável por matéria;
+-   overrides associados ao ID da matéria;
+-   link `Ver todas` opcional;
+-   archive da categoria como destino automático quando existe categoria;
+-   URL manual para `Ver todas` quando não existe categoria;
+-   layout Horizontal;
+-   layout Vertical;
+-   responsividade interna orientada à largura do próprio bloco com Container Queries;
+-   participação automática na hierarquia de headings;
+-   renderização dinâmica em PHP.
 
 No layout Horizontal, cada item apresenta imagem, categoria, título e data.
 
@@ -471,36 +471,36 @@ Posição publicitária reutilizável dentro da composição Gutenberg.
 
 Características:
 
-- bloco dinâmico;
-- tipos `manual` e `adsense`;
-- placement `horizontal` ou `rectangle`;
-- formatos publicitários predefinidos;
-- anúncio Manual com imagem e URL opcional;
-- links manuais clicáveis com `rel="sponsored"`;
-- configuração global do AdSense Client ID;
-- Ad Slot ID configurado por ocorrência;
-- preview do AdSense no Gutenberg sem carregar anúncios reais;
-- integração independente do Site Kit;
-- script global do AdSense não é carregado pelo bloco;
-- identificação visual `Publicidade`;
-- formatos adaptados à largura disponível com Container Queries;
-- imagens manuais preservadas com `object-fit: contain`;
-- não participa da seleção ou deduplicação de matérias;
-- não participa da hierarquia de headings.
+-   bloco dinâmico;
+-   tipos `manual` e `adsense`;
+-   placement `horizontal` ou `rectangle`;
+-   formatos publicitários predefinidos;
+-   anúncio Manual com imagem e URL opcional;
+-   links manuais clicáveis com `rel="sponsored"`;
+-   configuração global do AdSense Client ID;
+-   Ad Slot ID configurado por ocorrência;
+-   preview do AdSense no Gutenberg sem carregar anúncios reais;
+-   integração independente do Site Kit;
+-   script global do AdSense não é carregado pelo bloco;
+-   identificação visual `Publicidade`;
+-   formatos adaptados à largura disponível sem alterar o preset selecionado;
+-   imagens manuais preservadas com `object-fit: contain`;
+-   não participa da seleção ou deduplicação de matérias;
+-   não participa da hierarquia de headings.
 
 Formatos disponíveis no MVP:
 
 **Horizontal**
 
-- Mobile Banner — 320 × 50
-- Large Mobile Banner — 320 × 100
-- Leaderboard — 728 × 90
-- Super Leaderboard — 970 × 90
-- Billboard — 970 × 250
+-   Mobile Banner — 320 × 50
+-   Large Mobile Banner — 320 × 100
+-   Leaderboard — 728 × 90
+-   Super Leaderboard — 970 × 90
+-   Billboard — 970 × 250
 
 **Rectangle**
 
-- Medium Rectangle — 300 × 250
+-   Medium Rectangle — 300 × 250
 
 Quando a dimensão nominal de um formato não cabe no container disponível, o Ad Slot reduz sua geometria proporcionalmente sem trocar automaticamente o formato escolhido.
 
@@ -518,32 +518,32 @@ Seção editorial para destacar autores e colunistas reais do WordPress através
 
 Características:
 
-- bloco dinâmico;
-- seleção manual e ordenada de autores;
-- quantidade configurável entre 3 e 5 autores;
-- quantidade padrão de 5 autores;
-- prevenção de repetição do mesmo autor dentro da própria ocorrência do bloco;
-- usuários elegíveis precisam possuir ao menos uma matéria `post` publicada;
-- utiliza `display_name` como nome do autor;
-- utiliza a foto editorial fornecida pelo tema quando disponível;
-- utiliza o avatar nativo do WordPress como fallback;
-- utiliza iniciais como fallback visual quando nenhuma imagem está disponível;
-- utiliza o cargo editorial do perfil do autor quando disponível;
-- conta dinamicamente apenas posts `post` publicados;
-- singularização e pluralização de `matéria` e `matérias`;
-- cada card direciona para o archive individual do autor;
-- título padrão `Nossos principais autores`;
-- título da seção customizável inline;
-- link `Ver todas` opcional;
-- URL de `Ver todas` configurada manualmente;
-- responsividade orientada à largura real do próprio bloco com Container Queries;
-- 1 coluna em containers estreitos;
-- 2 colunas a partir de 36rem;
-- 4 colunas a partir de 48rem;
-- em 64rem ou mais, utiliza uma coluna por autor efetivamente renderizado, até o limite de 5;
-- participação automática na hierarquia de headings;
-- não participa da seleção ou deduplicação de matérias;
-- renderização dinâmica em PHP.
+-   bloco dinâmico;
+-   seleção manual e ordenada de autores;
+-   quantidade configurável entre 3 e 5 autores;
+-   quantidade padrão de 5 autores;
+-   prevenção de repetição do mesmo autor dentro da própria ocorrência do bloco;
+-   usuários elegíveis precisam possuir ao menos uma matéria `post` publicada;
+-   utiliza `display_name` como nome do autor;
+-   utiliza a foto editorial fornecida pelo tema quando disponível;
+-   utiliza o avatar nativo do WordPress como fallback;
+-   utiliza iniciais como fallback visual quando nenhuma imagem está disponível;
+-   utiliza o cargo editorial do perfil do autor quando disponível;
+-   conta dinamicamente apenas posts `post` publicados;
+-   singularização e pluralização de `matéria` e `matérias`;
+-   cada card direciona para o archive individual do autor;
+-   título padrão `Nossos principais autores`;
+-   título da seção customizável inline;
+-   link `Ver todas` opcional;
+-   URL de `Ver todas` configurada manualmente;
+-   responsividade orientada à largura real do próprio bloco com Container Queries;
+-   1 coluna em containers estreitos;
+-   2 colunas a partir de 36rem;
+-   4 colunas a partir de 48rem;
+-   em 64rem ou mais, utiliza uma coluna por autor efetivamente renderizado, até o limite de 5;
+-   participação automática na hierarquia de headings;
+-   não participa da seleção ou deduplicação de matérias;
+-   renderização dinâmica em PHP.
 
 O Featured Authors não cria CPT, sistema próprio de usuários, ranking de autores ou contexto global de deduplicação entre blocos de autores.
 
@@ -561,10 +561,10 @@ Cada bloco possui um `render.php` responsável por validar seus atributos e gera
 
 Nos blocos editoriais de notícias, a renderização também é responsável, quando aplicável, por:
 
-- validar os posts utilizados;
-- aplicar overrides;
-- respeitar o contexto de posts já consumidos;
-- definir a hierarquia semântica.
+-   validar os posts utilizados;
+-   aplicar overrides;
+-   respeitar o contexto de posts já consumidos;
+-   definir a hierarquia semântica.
 
 No Ad Slot, a renderização decide entre anúncio Manual e unidade AdSense e não participa do contexto editorial de posts ou headings.
 

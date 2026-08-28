@@ -20,68 +20,39 @@ import { useSelect } from '@wordpress/data';
 import { __, sprintf } from '@wordpress/i18n';
 
 const AD_TYPES = [ 'manual', 'adsense' ];
-const AD_PLACEMENTS = [ 'horizontal', 'rectangle' ];
 const ALLOWED_MEDIA_TYPES = [ 'image' ];
 
-const AD_FORMATS = {
-	horizontal: [
-		{
-			value: 'mobile-banner',
-			label: __(
-				'Banner mobile — 320 × 50',
-				'wordpress-template-news-blocks'
-			),
-			size: '320 × 50',
-		},
-		{
-			value: 'large-mobile-banner',
-			label: __(
-				'Banner mobile grande — 320 × 100',
-				'wordpress-template-news-blocks'
-			),
-			size: '320 × 100',
-		},
-		{
-			value: 'leaderboard',
-			label: __(
-				'Leaderboard — 728 × 90',
-				'wordpress-template-news-blocks'
-			),
-			size: '728 × 90',
-		},
-		{
-			value: 'super-leaderboard',
-			label: __(
-				'Super Leaderboard — 970 × 90',
-				'wordpress-template-news-blocks'
-			),
-			size: '970 × 90',
-		},
-		{
-			value: 'billboard',
-			label: __(
-				'Billboard — 970 × 250',
-				'wordpress-template-news-blocks'
-			),
-			size: '970 × 250',
-		},
-	],
-	rectangle: [
-		{
-			value: 'medium-rectangle',
-			label: __(
-				'Retângulo médio — 300 × 250',
-				'wordpress-template-news-blocks'
-			),
-			size: '300 × 250',
-		},
-	],
-};
+function normalizeAdSlotFormats( adSlotFormats ) {
+	return adSlotFormats &&
+		typeof adSlotFormats === 'object' &&
+		! Array.isArray( adSlotFormats )
+		? adSlotFormats
+		: {};
+}
 
-const DEFAULT_AD_FORMATS = {
-	horizontal: 'leaderboard',
-	rectangle: 'medium-rectangle',
-};
+function getAdFormatDimensions( formatConfig ) {
+	const width = Number( formatConfig?.width ) || 0;
+	const height = Number( formatConfig?.height ) || 0;
+
+	if ( width <= 0 || height <= 0 ) {
+		return null;
+	}
+
+	return {
+		width,
+		height,
+	};
+}
+
+function getAdFormatSize( formatConfig ) {
+	const dimensions = getAdFormatDimensions( formatConfig );
+
+	if ( ! dimensions ) {
+		return '';
+	}
+
+	return `${ dimensions.width } × ${ dimensions.height }`;
+}
 
 function getMediaImageUrl( media ) {
 	return (
@@ -103,24 +74,91 @@ export default function Edit( { attributes, setAttributes } ) {
 		adSlotId = '',
 	} = attributes;
 
+	const { adsenseConfigured, adSlotFormats } = useSelect( ( select ) => {
+		const editorSettings = select( blockEditorStore ).getSettings();
+
+		return {
+			adsenseConfigured: Boolean(
+				editorSettings?.wtnBlocks?.adsenseConfigured
+			),
+			adSlotFormats: normalizeAdSlotFormats(
+				editorSettings?.wtnBlocks?.adSlotFormats
+			),
+		};
+	}, [] );
+
 	const normalizedType = AD_TYPES.includes( type ) ? type : 'manual';
 
-	const normalizedPlacement = AD_PLACEMENTS.includes( placement )
+	const placementEntries = Object.entries( adSlotFormats );
+
+	const fallbackPlacement =
+		placementEntries.find(
+			( [ placementValue ] ) => placementValue === 'horizontal'
+		)?.[ 0 ] ||
+		placementEntries[ 0 ]?.[ 0 ] ||
+		'';
+
+	const normalizedPlacement = adSlotFormats[ placement ]
 		? placement
-		: 'horizontal';
+		: fallbackPlacement;
 
-	const formatOptions = AD_FORMATS[ normalizedPlacement ];
+	const placementConfig = adSlotFormats[ normalizedPlacement ] || {};
 
-	const normalizedFormat = formatOptions.some(
-		( formatOption ) => formatOption.value === format
-	)
+	const placementFormats = normalizeAdSlotFormats( placementConfig.formats );
+
+	const formatEntries = Object.entries( placementFormats );
+
+	const configuredDefaultFormat =
+		typeof placementConfig.defaultFormat === 'string'
+			? placementConfig.defaultFormat
+			: '';
+
+	const defaultFormat = placementFormats[ configuredDefaultFormat ]
+		? configuredDefaultFormat
+		: formatEntries[ 0 ]?.[ 0 ] || '';
+
+	const normalizedFormat = placementFormats[ format ]
 		? format
-		: DEFAULT_AD_FORMATS[ normalizedPlacement ];
+		: defaultFormat;
 
-	const selectedFormat =
-		formatOptions.find(
-			( formatOption ) => formatOption.value === normalizedFormat
-		) || formatOptions[ 0 ];
+	const selectedFormat = placementFormats[ normalizedFormat ] || null;
+
+	const selectedFormatDimensions = getAdFormatDimensions( selectedFormat );
+
+	const placementOptions = placementEntries.map(
+		( [ placementValue, placementData ] ) => ( {
+			value: placementValue,
+			label:
+				typeof placementData?.label === 'string'
+					? placementData.label
+					: placementValue,
+		} )
+	);
+
+	const formatOptions = formatEntries.map(
+		( [ formatValue, formatData ] ) => {
+			const formatLabel =
+				typeof formatData?.label === 'string'
+					? formatData.label
+					: formatValue;
+
+			const formatSize = getAdFormatSize( formatData );
+
+			return {
+				value: formatValue,
+				label: formatSize
+					? `${ formatLabel } — ${ formatSize }`
+					: formatLabel,
+			};
+		}
+	);
+
+	const selectedFormatSize = getAdFormatSize( selectedFormat );
+
+	const hasAdSlotFormats =
+		Boolean( normalizedPlacement ) &&
+		Boolean( normalizedFormat ) &&
+		Boolean( selectedFormatDimensions );
 
 	const normalizedImageId = Number( imageId ) || 0;
 
@@ -130,12 +168,6 @@ export default function Edit( { attributes, setAttributes } ) {
 		typeof adSlotId === 'string' ? adSlotId.trim() : '';
 
 	const hasValidAdSlotId = /^[0-9]+$/.test( normalizedAdSlotId );
-
-	const adsenseConfigured = useSelect( ( select ) => {
-		const editorSettings = select( blockEditorStore ).getSettings();
-
-		return Boolean( editorSettings?.wtnBlocks?.adsenseConfigured );
-	}, [] );
 
 	const { media, isResolvingMedia } = useSelect(
 		( select ) => {
@@ -170,13 +202,19 @@ export default function Edit( { attributes, setAttributes } ) {
 
 	const hasManualImage = normalizedImageId > 0 && Boolean( imageUrl );
 
+	const creativeStyle = selectedFormatDimensions
+		? {
+				'--wtn-ad-slot-creative-max-inline-size': `${ selectedFormatDimensions.width }px`,
+				'--wtn-ad-slot-creative-aspect-ratio': `${ selectedFormatDimensions.width } / ${ selectedFormatDimensions.height }`,
+		  }
+		: undefined;
+
 	const blockProps = useBlockProps( {
 		className: [
 			'wtn-blocks-ad-slot',
 			`wtn-blocks-ad-slot--${ normalizedType }`,
-			`wtn-blocks-ad-slot--${ normalizedPlacement }`,
-			`wtn-blocks-ad-slot--format-${ normalizedFormat }`,
 		].join( ' ' ),
+		style: creativeStyle,
 	} );
 
 	const handleMediaSelect = ( mediaItem ) => {
@@ -302,7 +340,9 @@ export default function Edit( { attributes, setAttributes } ) {
 							) }
 						</strong>
 
-						<span>{ selectedFormat.size }</span>
+						{ selectedFormatSize && (
+							<span>{ selectedFormatSize }</span>
+						) }
 
 						<code>
 							{ sprintf(
@@ -329,6 +369,15 @@ export default function Edit( { attributes, setAttributes } ) {
 						'wordpress-template-news-blocks'
 					) }
 				>
+					{ ! hasAdSlotFormats && (
+						<Notice status="error" isDismissible={ false }>
+							{ __(
+								'Os formatos de publicidade não estão disponíveis no editor.',
+								'wordpress-template-news-blocks'
+							) }
+						</Notice>
+					) }
+
 					<RadioControl
 						label={ __( 'Tipo', 'wordpress-template-news-blocks' ) }
 						selected={ normalizedType }
@@ -363,30 +412,38 @@ export default function Edit( { attributes, setAttributes } ) {
 							'wordpress-template-news-blocks'
 						) }
 						selected={ normalizedPlacement }
-						options={ [
-							{
-								label: __(
-									'Horizontal',
-									'wordpress-template-news-blocks'
-								),
-								value: 'horizontal',
-							},
-							{
-								label: __(
-									'Retangular',
-									'wordpress-template-news-blocks'
-								),
-								value: 'rectangle',
-							},
-						] }
+						disabled={ ! hasAdSlotFormats }
+						options={ placementOptions }
 						onChange={ ( nextPlacement ) => {
-							if ( ! AD_PLACEMENTS.includes( nextPlacement ) ) {
+							const nextPlacementConfig =
+								adSlotFormats[ nextPlacement ];
+
+							if ( ! nextPlacementConfig ) {
+								return;
+							}
+
+							const nextPlacementFormats = normalizeAdSlotFormats(
+								nextPlacementConfig.formats
+							);
+
+							const nextDefaultFormat =
+								typeof nextPlacementConfig.defaultFormat ===
+									'string' &&
+								nextPlacementFormats[
+									nextPlacementConfig.defaultFormat
+								]
+									? nextPlacementConfig.defaultFormat
+									: Object.keys(
+											nextPlacementFormats
+									  )[ 0 ] || '';
+
+							if ( ! nextDefaultFormat ) {
 								return;
 							}
 
 							setAttributes( {
 								placement: nextPlacement,
-								format: DEFAULT_AD_FORMATS[ nextPlacement ],
+								format: nextDefaultFormat,
 							} );
 						} }
 					/>
@@ -397,21 +454,16 @@ export default function Edit( { attributes, setAttributes } ) {
 							'wordpress-template-news-blocks'
 						) }
 						value={ normalizedFormat }
-						options={ formatOptions.map( ( formatOption ) => ( {
-							label: formatOption.label,
-							value: formatOption.value,
-						} ) ) }
+						disabled={ ! hasAdSlotFormats }
+						options={ formatOptions }
 						onChange={ ( nextFormat ) => {
-							const isValidFormat = formatOptions.some(
-								( formatOption ) =>
-									formatOption.value === nextFormat
-							);
-
-							if ( isValidFormat ) {
-								setAttributes( {
-									format: nextFormat,
-								} );
+							if ( ! placementFormats[ nextFormat ] ) {
+								return;
 							}
+
+							setAttributes( {
+								format: nextFormat,
+							} );
 						} }
 						help={ __(
 							'Em containers menores que a dimensão nominal, o formato é reduzido proporcionalmente sem mudar para outro preset.',

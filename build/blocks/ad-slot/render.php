@@ -35,36 +35,39 @@ $type = in_array(
     ? $block_attributes['type']
     : 'manual';
 
-$placement = in_array(
-    $block_attributes['placement'],
-    ['horizontal', 'rectangle'],
-    true
-)
+$ad_slot_formats = wtn_blocks_get_ad_slot_formats();
+
+$placement = is_string($block_attributes['placement'])
+    && isset($ad_slot_formats[$block_attributes['placement']])
     ? $block_attributes['placement']
     : 'horizontal';
 
-$format_placements = [
-    'mobile-banner'       => 'horizontal',
-    'large-mobile-banner' => 'horizontal',
-    'leaderboard'         => 'horizontal',
-    'super-leaderboard'   => 'horizontal',
-    'billboard'           => 'horizontal',
-    'medium-rectangle'    => 'rectangle',
-];
+$placement_config = $ad_slot_formats[$placement];
 
-$default_format = 'rectangle' === $placement
-    ? 'medium-rectangle'
-    : 'leaderboard';
+$default_format = $placement_config['defaultFormat'];
 
 $format = is_string($block_attributes['format'])
+    && isset(
+        $placement_config['formats'][$block_attributes['format']]
+    )
     ? $block_attributes['format']
     : $default_format;
 
+$format_config = $placement_config['formats'][$format];
+
+$format_width = absint(
+    $format_config['width'] ?? 0
+);
+
+$format_height = absint(
+    $format_config['height'] ?? 0
+);
+
 if (
-    ! isset($format_placements[$format])
-    || $placement !== $format_placements[$format]
+    0 === $format_width
+    || 0 === $format_height
 ) {
-    $format = $default_format;
+    return;
 }
 
 $image_html        = '';
@@ -147,9 +150,13 @@ $wrapper_attributes = get_block_wrapper_attributes(
             [
                 'wtn-blocks-ad-slot',
                 'wtn-blocks-ad-slot--' . $type,
-                'wtn-blocks-ad-slot--' . $placement,
-                'wtn-blocks-ad-slot--format-' . $format,
             ]
+        ),
+        'style' => sprintf(
+            '--wtn-ad-slot-creative-max-inline-size: %dpx; --wtn-ad-slot-creative-aspect-ratio: %d / %d;',
+            $format_width,
+            $format_width,
+            $format_height
         ),
     ]
 );
