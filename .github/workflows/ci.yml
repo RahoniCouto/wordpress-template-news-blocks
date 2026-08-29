@@ -1,0 +1,62 @@
+name: CI
+
+on:
+    push:
+        branches:
+            - main
+    pull_request:
+        branches:
+            - main
+
+permissions:
+    contents: read
+
+jobs:
+    validate:
+        name: Validate plugin
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: npm
+
+            - name: Install Node dependencies
+              run: npm ci
+
+            - name: Lint JavaScript
+              run: npm run lint:js
+
+            - name: Build blocks
+              run: npm run build
+
+            - name: Verify build artifacts
+              shell: bash
+              run: |
+                  changes="$(git status --porcelain -- build)"
+
+                  if [ -n "$changes" ]; then
+                    echo "Build artifacts are out of date:"
+                    echo "$changes"
+                    git diff -- build
+                    exit 1
+                  fi
+
+            - name: Set up PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.1'
+                  coverage: none
+
+            - name: Lint PHP
+              run: |
+                  find . \
+                    -type f \
+                    -name '*.php' \
+                    -not -path './node_modules/*' \
+                    -print0 | xargs -0 -n1 php -l
