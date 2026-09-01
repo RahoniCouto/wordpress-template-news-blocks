@@ -1,60 +1,70 @@
 .wtn-blocks-ad-slot__remove-image {
-  margin-inline-start: 0.75rem;
+	margin-inline-start: 0.75rem;
+}
+
+.wtn-blocks-ad-slot__requirement-notice {
+	margin-block-end: 1rem;
 }
 
 .editor-styles-wrapper {
-  .wtn-blocks-ad-slot {
-    /*
+	.wtn-blocks-ad-slot {
+		/*
      * Estados ainda não configurados continuam utilizando
      * um placeholder editorial confortável para configuração.
      *
      * Isso não representa a geometria final da publicidade.
      */
-    > .components-placeholder {
-      min-height: 10rem;
-    }
+		> .components-placeholder {
+			min-height: 10rem;
+		}
 
-    &__editor-loading,
-    &__editor-adsense {
-      width: 100%;
-      height: 100%;
-      border: 1px dashed #c3c4c7;
-    }
+		&__editor-loading,
+		&__editor-adsense {
+			width: 100%;
+			height: 100%;
+			border: 1px dashed #c3c4c7;
+		}
 
-    &__editor-loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+		&__editor-loading {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
 
-    &__editor-adsense {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: center;
-      gap: 0.25rem 0.625rem;
-      padding: 0.375rem 0.5rem;
-      text-align: center;
+		&__editor-adsense {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			justify-content: center;
+			gap: 0.25rem 0.625rem;
+			padding: 0.375rem 0.5rem;
+			text-align: center;
 
-      strong,
-      span,
-      code {
-        line-height: 1.2;
-        white-space: nowrap;
-      }
+			strong,
+			span,
+			code {
+				line-height: 1.2;
+				white-space: nowrap;
+			}
 
-      strong {
-        font-size: 0.75rem;
-      }
+			strong {
+				font-size: 0.75rem;
+			}
 
-      span,
-      code {
-        font-size: 0.6875rem;
-      }
-    }
+			span,
+			code {
+				font-size: 0.6875rem;
+			}
+		}
 
-    &__alt-notice {
-      margin: 0;
-    }
-  }
+		&__notices {
+			display: grid;
+			gap: 0.5rem;
+		}
+
+		&__alt-notice,
+		&__dimensions-notice {
+			margin: 0;
+		}
+	}
 }

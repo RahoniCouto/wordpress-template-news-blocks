@@ -504,7 +504,7 @@ Formatos disponíveis no MVP:
 
 Quando a dimensão nominal de um formato não cabe no container disponível, o Ad Slot reduz sua geometria proporcionalmente sem trocar automaticamente o formato escolhido.
 
-No modo Manual, a imagem é contida dentro da geometria do formato sem crop ou distorção.
+No modo Manual, o creative deve utilizar exatamente as dimensões nominais do formato selecionado. O editor sinaliza imagens com dimensões incompatíveis. No frontend, a imagem continua contida dentro da geometria do formato sem crop ou distorção como proteção defensiva.
 
 No modo AdSense, a unidade continua responsiva e utiliza o placement como `data-ad-format`. O carregamento global do AdSense permanece responsabilidade do site.
 
@@ -578,11 +578,17 @@ Alterações devem ser realizadas em `src/` e posteriormente compiladas.
 
 ## Estrutura principal
 
-```
+```text
 wordpress-template-news-blocks.php
 
 inc/
+├── content/
+│   └── reading-time.php
+├── rest/
+│   └── editorial-post-selection.php
+├── ad-slot-formats.php
 ├── blocks.php
+├── editorial-post-data.php
 ├── editorial-post-overrides.php
 ├── heading-context.php
 ├── post-context.php
@@ -613,6 +619,7 @@ src/
 │   └── use-previous-editorial-post-ids/
 │
 └── utils/
+    ├── editorial-post-data.js
     └── editorial-post-overrides.js
 
 build/

@@ -2,9 +2,9 @@ import {
 	InspectorControls,
 	MediaUpload,
 	MediaUploadCheck,
-	store as blockEditorStore,
 	useBlockProps,
 } from '@wordpress/block-editor';
+import { store as editorStore } from '@wordpress/editor';
 import {
 	Button,
 	Notice,
@@ -64,6 +64,20 @@ function getMediaImageUrl( media ) {
 	);
 }
 
+function getMediaDimensions( media ) {
+	const width = Number( media?.media_details?.width ) || 0;
+	const height = Number( media?.media_details?.height ) || 0;
+
+	if ( width <= 0 || height <= 0 ) {
+		return null;
+	}
+
+	return {
+		width,
+		height,
+	};
+}
+
 export default function Edit( { attributes, setAttributes } ) {
 	const {
 		type = 'manual',
@@ -75,7 +89,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	} = attributes;
 
 	const { adsenseConfigured, adSlotFormats } = useSelect( ( select ) => {
-		const editorSettings = select( blockEditorStore ).getSettings();
+		const editorSettings = select( editorStore ).getEditorSettings();
 
 		return {
 			adsenseConfigured: Boolean(
@@ -200,7 +214,15 @@ export default function Edit( { attributes, setAttributes } ) {
 
 	const imageAlt = typeof media?.alt_text === 'string' ? media.alt_text : '';
 
+	const mediaDimensions = getMediaDimensions( media );
+
 	const hasManualImage = normalizedImageId > 0 && Boolean( imageUrl );
+
+	const hasInvalidCreativeDimensions =
+		Boolean( mediaDimensions ) &&
+		Boolean( selectedFormatDimensions ) &&
+		( mediaDimensions.width !== selectedFormatDimensions.width ||
+			mediaDimensions.height !== selectedFormatDimensions.height );
 
 	const creativeStyle = selectedFormatDimensions
 		? {
@@ -254,17 +276,41 @@ export default function Edit( { attributes, setAttributes } ) {
 					/>
 				</div>
 
-				{ ! imageAlt && (
-					<Notice
-						className="wtn-blocks-ad-slot__alt-notice"
-						status="warning"
-						isDismissible={ false }
-					>
-						{ __(
-							'A imagem não possui texto alternativo na Biblioteca de Mídia.',
-							'wordpress-template-news-blocks'
+				{ ( hasInvalidCreativeDimensions || ! imageAlt ) && (
+					<div className="wtn-blocks-ad-slot__notices">
+						{ hasInvalidCreativeDimensions && (
+							<Notice
+								className="wtn-blocks-ad-slot__dimensions-notice"
+								status="warning"
+								isDismissible={ false }
+							>
+								{ sprintf(
+									/* translators: 1: image width, 2: image height, 3: required width, 4: required height. */
+									__(
+										'Dimensões incompatíveis. A imagem possui %1$d × %2$d px, mas o formato selecionado exige %3$d × %4$d px. Substitua a imagem para garantir a exibição correta do anúncio e evitar transferência desnecessária.',
+										'wordpress-template-news-blocks'
+									),
+									mediaDimensions.width,
+									mediaDimensions.height,
+									selectedFormatDimensions.width,
+									selectedFormatDimensions.height
+								) }
+							</Notice>
 						) }
-					</Notice>
+
+						{ ! imageAlt && (
+							<Notice
+								className="wtn-blocks-ad-slot__alt-notice"
+								status="warning"
+								isDismissible={ false }
+							>
+								{ __(
+									'A imagem não possui texto alternativo na Biblioteca de Mídia.',
+									'wordpress-template-news-blocks'
+								) }
+							</Notice>
+						) }
+					</div>
 				) }
 			</>
 		);
@@ -480,6 +526,23 @@ export default function Edit( { attributes, setAttributes } ) {
 						) }
 						initialOpen
 					>
+						{ selectedFormatSize && (
+							<Notice
+								className="wtn-blocks-ad-slot__requirement-notice"
+								status="info"
+								isDismissible={ false }
+							>
+								{ sprintf(
+									/* translators: %s: required advertisement image dimensions. */
+									__(
+										'Use uma imagem com exatamente %s px para o formato selecionado.',
+										'wordpress-template-news-blocks'
+									),
+									selectedFormatSize
+								) }
+							</Notice>
+						) }
+
 						<MediaUploadCheck>
 							<MediaUpload
 								allowedTypes={ ALLOWED_MEDIA_TYPES }
