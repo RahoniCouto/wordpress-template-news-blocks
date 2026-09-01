@@ -16,9 +16,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-define('WTN_BLOCKS_VERSION', '0.1.0');
 define('WTN_BLOCKS_PATH', plugin_dir_path(__FILE__));
-define('WTN_BLOCKS_URL', plugin_dir_url(__FILE__));
 
 require_once WTN_BLOCKS_PATH . 'inc/setup.php';
 require_once WTN_BLOCKS_PATH . 'inc/ad-slot-formats.php';
