@@ -16,6 +16,7 @@ $block_attributes = wp_parse_args(
         'categoryId'           => 0,
         'selectionMode'        => 'automatic',
         'layoutVariant'        => 'featured-media-left',
+        'prioritizeImage'      => false,
         'titleOverride'        => '',
         'viewAllLabelOverride' => '',
         'viewAllUrlOverride'   => '',
@@ -41,6 +42,8 @@ $layout_variant = in_array(
 )
     ? $block_attributes['layoutVariant']
     : 'featured-media-left';
+
+$prioritize_image = true === $block_attributes['prioritizeImage'];
 
 $slot_post_ids = is_array($block_attributes['slotPostIds'])
     ? array_slice(
@@ -88,6 +91,11 @@ $featured_post_id = $resolved_post_ids[0];
 if (0 === $featured_post_id) {
     return;
 }
+
+wtn_blocks_prime_editorial_post_data(
+    $resolved_post_ids,
+    $post_overrides
+);
 
 $section_category = null;
 
@@ -171,7 +179,8 @@ $get_post_render_data = static function (
     bool $is_featured
 ) use (
     $post_overrides,
-    $get_post_category
+    $get_post_category,
+    $prioritize_image
 ): ?array {
     $post_data = wtn_blocks_get_editorial_post_data(
         $post_id,
@@ -219,20 +228,29 @@ $get_post_render_data = static function (
     $image_html = '';
 
     if ($image_id > 0) {
+        $image_attributes = [
+            'class'    => $is_featured
+                ? 'wtn-blocks-news-section__featured-image'
+                : 'wtn-blocks-news-section__secondary-image',
+            'alt'      => $image_alt,
+            'loading'  => $is_featured && $prioritize_image
+                ? 'eager'
+                : 'lazy',
+            'decoding' => 'async',
+            'sizes'    => $is_featured
+                ? '(min-width: 782px) 55vw, 100vw'
+                : '(min-width: 782px) 30vw, 36vw',
+        ];
+
+        if ($is_featured && $prioritize_image) {
+            $image_attributes['fetchpriority'] = 'high';
+        }
+
         $image_html = wp_get_attachment_image(
             $image_id,
             $image_size,
             false,
-            [
-                'class'    => $is_featured
-                    ? 'wtn-blocks-news-section__featured-image'
-                    : 'wtn-blocks-news-section__secondary-image',
-                'alt'      => $image_alt,
-                'decoding' => 'async',
-                'sizes'    => $is_featured
-                    ? '(min-width: 782px) 55vw, 100vw'
-                    : '(min-width: 782px) 30vw, 36vw',
-            ]
+            $image_attributes
         );
     }
 

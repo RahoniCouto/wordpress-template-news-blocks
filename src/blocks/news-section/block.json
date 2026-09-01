@@ -1,58 +1,62 @@
 {
-  "$schema": "https://schemas.wp.org/trunk/block.json",
-  "apiVersion": 3,
-  "name": "wtn-blocks/news-section",
-  "version": "0.1.0",
-  "title": "News Section",
-  "category": "widgets",
-  "icon": "screenoptions",
-  "description": "Seção editorial com uma matéria principal e três matérias secundárias.",
-  "textdomain": "wordpress-template-news-blocks",
-  "attributes": {
-    "categoryId": {
-      "type": "number",
-      "default": 0
-    },
-    "selectionMode": {
-      "type": "string",
-      "default": "automatic"
-    },
-    "layoutVariant": {
-      "type": "string",
-      "default": "featured-media-left"
-    },
-    "titleOverride": {
-      "type": "string",
-      "default": ""
-    },
-    "viewAllLabelOverride": {
-      "type": "string",
-      "default": ""
-    },
-    "viewAllUrlOverride": {
-      "type": "string",
-      "default": ""
-    },
-    "slotPostIds": {
-      "type": "array",
-      "default": [0, 0, 0, 0]
-    },
-    "postOverrides": {
-      "type": "object",
-      "default": {}
-    },
-    "resolvedPostIds": {
-      "type": "array",
-      "default": [0, 0, 0, 0],
-      "role": "local"
-    }
-  },
-  "supports": {
-    "html": false,
-    "align": ["wide"]
-  },
-  "editorScript": "file:./index.js",
-  "style": "file:./style-index.css",
-  "editorStyle": "file:./index.css",
-  "render": "file:./render.php"
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "wtn-blocks/news-section",
+	"version": "0.1.0",
+	"title": "News Section",
+	"category": "widgets",
+	"icon": "screenoptions",
+	"description": "Seção editorial com uma matéria principal e três matérias secundárias.",
+	"textdomain": "wordpress-template-news-blocks",
+	"attributes": {
+		"categoryId": {
+			"type": "number",
+			"default": 0
+		},
+		"selectionMode": {
+			"type": "string",
+			"default": "automatic"
+		},
+		"layoutVariant": {
+			"type": "string",
+			"default": "featured-media-left"
+		},
+		"prioritizeImage": {
+			"type": "boolean",
+			"default": false
+		},
+		"titleOverride": {
+			"type": "string",
+			"default": ""
+		},
+		"viewAllLabelOverride": {
+			"type": "string",
+			"default": ""
+		},
+		"viewAllUrlOverride": {
+			"type": "string",
+			"default": ""
+		},
+		"slotPostIds": {
+			"type": "array",
+			"default": [ 0, 0, 0, 0 ]
+		},
+		"postOverrides": {
+			"type": "object",
+			"default": {}
+		},
+		"resolvedPostIds": {
+			"type": "array",
+			"default": [ 0, 0, 0, 0 ],
+			"role": "local"
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [ "wide" ]
+	},
+	"editorScript": "file:./index.js",
+	"style": "file:./style-index.css",
+	"editorStyle": "file:./index.css",
+	"render": "file:./render.php"
 }

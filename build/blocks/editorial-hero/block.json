@@ -20,6 +20,10 @@
     "mediaPosition": {
       "type": "string",
       "default": "left"
+    },
+    "prioritizeImage": {
+      "type": "boolean",
+      "default": false
     }
   },
   "supports": {

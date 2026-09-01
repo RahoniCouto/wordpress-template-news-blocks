@@ -5,6 +5,7 @@ import {
 	RadioControl,
 	Spinner,
 	TextControl,
+	ToggleControl,
 } from '@wordpress/components';
 import { store as coreStore } from '@wordpress/core-data';
 import { dateI18n, getSettings } from '@wordpress/date';
@@ -207,6 +208,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		categoryId = 0,
 		selectionMode = 'automatic',
 		layoutVariant = 'featured-media-left',
+		prioritizeImage = false,
 		titleOverride = '',
 		viewAllLabelOverride = '',
 		viewAllUrlOverride = '',
@@ -562,6 +564,22 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					} }
 					help={ __(
 						'No mobile, os dois layouts convergem para destaque empilhado e matérias secundárias compactas.',
+						'wordpress-template-news-blocks'
+					) }
+				/>
+				<ToggleControl
+					label={ __(
+						'Priorizar carregamento da imagem',
+						'wordpress-template-news-blocks'
+					) }
+					checked={ prioritizeImage }
+					onChange={ ( nextPrioritizeImage ) => {
+						setAttributes( {
+							prioritizeImage: nextPrioritizeImage,
+						} );
+					} }
+					help={ __(
+						'Ative quando esta News Section estiver na primeira dobra. Apenas a imagem de destaque recebe prioridade alta; as imagens secundárias continuam com carregamento lazy.',
 						'wordpress-template-news-blocks'
 					) }
 				/>

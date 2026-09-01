@@ -21,6 +21,10 @@
       "type": "string",
       "default": "featured-media-left"
     },
+    "prioritizeImage": {
+      "type": "boolean",
+      "default": false
+    },
     "titleOverride": {
       "type": "string",
       "default": ""

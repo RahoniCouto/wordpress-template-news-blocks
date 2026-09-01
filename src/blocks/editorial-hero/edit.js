@@ -5,6 +5,7 @@ import {
 	Placeholder,
 	RadioControl,
 	Spinner,
+	ToggleControl,
 } from '@wordpress/components';
 import { store as coreStore } from '@wordpress/core-data';
 import { dateI18n, getSettings } from '@wordpress/date';
@@ -30,6 +31,7 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 		postId = 0,
 		postOverrides = {},
 		mediaPosition = 'left',
+		prioritizeImage = false,
 	} = attributes;
 
 	const normalizedPostId = Number( postId ) || 0;
@@ -181,6 +183,22 @@ export default function Edit( { attributes, setAttributes, clientId } ) {
 					} }
 					help={ __(
 						'No mobile, a imagem sempre aparece acima do conteúdo.',
+						'wordpress-template-news-blocks'
+					) }
+				/>
+				<ToggleControl
+					label={ __(
+						'Priorizar carregamento da imagem',
+						'wordpress-template-news-blocks'
+					) }
+					checked={ prioritizeImage }
+					onChange={ ( nextPrioritizeImage ) => {
+						setAttributes( {
+							prioritizeImage: nextPrioritizeImage,
+						} );
+					} }
+					help={ __(
+						'Ative somente quando este Hero estiver visível na primeira dobra da página. Use em apenas um Hero por página.',
 						'wordpress-template-news-blocks'
 					) }
 				/>

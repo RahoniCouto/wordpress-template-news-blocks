@@ -67,6 +67,11 @@ if (empty($resolved_post_ids)) {
     return;
 }
 
+wtn_blocks_prime_editorial_post_data(
+    $resolved_post_ids,
+    $post_overrides
+);
+
 $section_category = null;
 
 if ($category_id > 0) {

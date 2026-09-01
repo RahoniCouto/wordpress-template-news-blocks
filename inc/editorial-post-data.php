@@ -11,6 +11,63 @@ if (! defined('ABSPATH')) {
 }
 
 /**
+ * Primes the caches used to render editorial posts.
+ *
+ * Post objects, metadata and terms are primed in one batch. Image attachments
+ * used by featured images or editorial overrides are then primed separately.
+ *
+ * @param int[]        $post_ids       Post IDs.
+ * @param array<mixed> $post_overrides Editorial overrides indexed by post ID.
+ */
+function wtn_blocks_prime_editorial_post_data(
+    array $post_ids,
+    array $post_overrides = []
+): void {
+    $post_ids = array_values(
+        array_unique(
+            array_filter(
+                array_map('absint', $post_ids)
+            )
+        )
+    );
+
+    if (empty($post_ids)) {
+        return;
+    }
+
+    _prime_post_caches($post_ids, true, true);
+
+    $image_ids = [];
+
+    foreach ($post_ids as $post_id) {
+        $post_override = wtn_blocks_get_editorial_post_override(
+            $post_overrides,
+            $post_id
+        );
+
+        $image_id = absint(
+            $post_override['imageOverrideId'] ?? 0
+        );
+
+        if (0 === $image_id) {
+            $image_id = (int) get_post_thumbnail_id($post_id);
+        }
+
+        if ($image_id > 0) {
+            $image_ids[] = $image_id;
+        }
+    }
+
+    $image_ids = array_values(
+        array_unique($image_ids)
+    );
+
+    if (! empty($image_ids)) {
+        _prime_post_caches($image_ids, false, true);
+    }
+}
+
+/**
  * Returns the canonical base data for an editorial post.
  *
  * The helper resolves only data shared by the editorial post blocks.

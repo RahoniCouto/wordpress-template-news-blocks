@@ -13,9 +13,10 @@ if (! defined('ABSPATH')) {
 $block_attributes = wp_parse_args(
     $attributes ?? [],
     [
-        'postId'        => 0,
-        'postOverrides' => [],
-        'mediaPosition' => 'left',
+        'postId'          => 0,
+        'postOverrides'   => [],
+        'mediaPosition'   => 'left',
+        'prioritizeImage' => false,
     ]
 );
 
@@ -55,6 +56,8 @@ $media_position = in_array(
     ? $block_attributes['mediaPosition']
     : 'left';
 
+$prioritize_image = true === $block_attributes['prioritizeImage'];
+
 $excerpt = wtn_blocks_get_editorial_post_excerpt(
     $post,
     $post_override
@@ -76,18 +79,23 @@ $image_size = has_image_size('wtn-featured')
 $image_html = '';
 
 if ($image_id > 0) {
+    $image_attributes = [
+        'class'    => 'wtn-blocks-editorial-hero__image',
+        'alt'      => $image_alt,
+        'loading'  => $prioritize_image ? 'eager' : 'lazy',
+        'decoding' => 'async',
+        'sizes'    => '(min-width: 1024px) 50vw, 100vw',
+    ];
+
+    if ($prioritize_image) {
+        $image_attributes['fetchpriority'] = 'high';
+    }
+
     $image_html = wp_get_attachment_image(
         $image_id,
         $image_size,
         false,
-        [
-            'class'         => 'wtn-blocks-editorial-hero__image',
-            'alt'           => $image_alt,
-            'loading'       => 'eager',
-            'decoding'      => 'async',
-            'fetchpriority' => 'high',
-            'sizes'         => '(min-width: 1024px) 50vw, 100vw',
-        ]
+        $image_attributes
     );
 }
 

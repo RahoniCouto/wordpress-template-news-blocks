@@ -56,6 +56,38 @@ if (empty($normalized_author_ids)) {
     return;
 }
 
+cache_users($normalized_author_ids);
+
+$published_post_counts = count_many_users_posts(
+    $normalized_author_ids,
+    'post',
+    true
+);
+
+$author_photo_ids = [];
+
+foreach ($normalized_author_ids as $author_id) {
+    $photo_id = absint(
+        get_user_meta(
+            $author_id,
+            'wtn_author_photo_id',
+            true
+        )
+    );
+
+    if ($photo_id > 0) {
+        $author_photo_ids[] = $photo_id;
+    }
+}
+
+$author_photo_ids = array_values(
+    array_unique($author_photo_ids)
+);
+
+if (! empty($author_photo_ids)) {
+    _prime_post_caches($author_photo_ids, false, true);
+}
+
 $title_override = trim(
     wp_strip_all_tags(
         is_string($block_attributes['titleOverride'])
@@ -121,7 +153,10 @@ $get_author_initials = static function (string $display_name): string {
  * @param int $author_id Author user ID.
  * @return array<string, mixed>|null
  */
-$get_author_render_data = static function (int $author_id) use ($get_author_initials): ?array {
+$get_author_render_data = static function (int $author_id) use (
+    $get_author_initials,
+    $published_post_counts
+): ?array {
     $author_id = absint($author_id);
 
     if (0 === $author_id) {
@@ -147,9 +182,9 @@ $get_author_render_data = static function (int $author_id) use ($get_author_init
         return null;
     }
 
-    $published_post_count = function_exists('wtn_get_author_published_posts_count')
-        ? (int) wtn_get_author_published_posts_count($author_id)
-        : (int) count_user_posts($author_id, 'post', true);
+    $published_post_count = isset($published_post_counts[$author_id])
+        ? (int) $published_post_counts[$author_id]
+        : 0;
 
     if ($published_post_count < 1) {
         return null;
@@ -192,6 +227,7 @@ $get_author_render_data = static function (int $author_id) use ($get_author_init
                 'class'    => 'wtn-blocks-featured-authors__avatar-image',
                 'loading'  => 'lazy',
                 'decoding' => 'async',
+                'sizes'    => '3.5rem',
                 'alt'      => '',
             ]
         )
