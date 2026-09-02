@@ -45,16 +45,18 @@ function wtn_blocks_prime_editorial_post_data(
             $post_id
         );
 
-        $image_id = absint(
+        $override_image_id = absint(
             $post_override['imageOverrideId'] ?? 0
         );
 
-        if (0 === $image_id) {
-            $image_id = (int) get_post_thumbnail_id($post_id);
+        if ($override_image_id > 0) {
+            $image_ids[] = $override_image_id;
         }
 
-        if ($image_id > 0) {
-            $image_ids[] = $image_id;
+        $featured_image_id = (int) get_post_thumbnail_id($post_id);
+
+        if ($featured_image_id > 0) {
+            $image_ids[] = $featured_image_id;
         }
     }
 
@@ -191,11 +193,11 @@ function wtn_blocks_get_editorial_post_image_data(
         $post_override['imageOverrideId'] ?? 0
     );
 
-    if (0 === $image_id) {
+    if (! wtn_blocks_is_accessible_image_attachment($image_id)) {
         $image_id = (int) get_post_thumbnail_id($post);
     }
 
-    if (0 === $image_id) {
+    if (! wtn_blocks_is_accessible_image_attachment($image_id)) {
         return [
             'id'  => 0,
             'alt' => '',

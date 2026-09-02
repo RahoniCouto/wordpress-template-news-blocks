@@ -83,7 +83,7 @@ if ('manual' === $type) {
 
     if (
         0 === $image_id
-        || ! wp_attachment_is_image($image_id)
+        || ! wtn_blocks_is_accessible_image_attachment($image_id)
     ) {
         return;
     }

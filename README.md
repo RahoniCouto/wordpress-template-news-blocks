@@ -607,6 +607,7 @@ inc/
 ├── editorial-post-data.php
 ├── editorial-post-overrides.php
 ├── heading-context.php
+├── media.php
 ├── post-context.php
 ├── post-selection.php
 ├── settings.php

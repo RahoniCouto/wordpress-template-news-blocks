@@ -23,6 +23,7 @@ define('WTN_BLOCKS_PATH', plugin_dir_path(__FILE__));
 require_once WTN_BLOCKS_PATH . 'inc/setup.php';
 require_once WTN_BLOCKS_PATH . 'inc/ad-slot-formats.php';
 require_once WTN_BLOCKS_PATH . 'inc/settings.php';
+require_once WTN_BLOCKS_PATH . 'inc/media.php';
 require_once WTN_BLOCKS_PATH . 'inc/content/reading-time.php';
 require_once WTN_BLOCKS_PATH . 'inc/heading-context.php';
 require_once WTN_BLOCKS_PATH . 'inc/post-context.php';
