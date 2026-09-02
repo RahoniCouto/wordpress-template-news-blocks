@@ -196,13 +196,13 @@ export default function Edit( { attributes, setAttributes } ) {
 
 			return {
 				media: core.getEntityRecord(
-					'root',
-					'media',
+					'postType',
+					'attachment',
 					normalizedImageId
 				),
 				isResolvingMedia: core.isResolving( 'getEntityRecord', [
-					'root',
-					'media',
+					'postType',
+					'attachment',
 					normalizedImageId,
 				] ),
 			};

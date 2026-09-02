@@ -120,7 +120,11 @@ function FeaturedAuthorEditorCard( { author } ) {
 
 				return {
 					editorialPhoto: photoId
-						? core.getEntityRecord( 'root', 'media', photoId )
+						? core.getEntityRecord(
+								'postType',
+								'attachment',
+								photoId
+						  )
 						: null,
 					publishedPostCount: core.getEntityRecordsTotalItems(
 						'postType',
@@ -235,7 +239,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		( select ) => {
 			if ( ! selectedAuthorsQuery ) {
 				return {
-					selectedAuthors: [],
+					selectedAuthors: null,
 					isResolvingAuthors: false,
 				};
 			}
@@ -243,12 +247,11 @@ export default function Edit( { attributes, setAttributes } ) {
 			const core = select( coreStore );
 
 			return {
-				selectedAuthors:
-					core.getEntityRecords(
-						'root',
-						'user',
-						selectedAuthorsQuery
-					) || [],
+				selectedAuthors: core.getEntityRecords(
+					'root',
+					'user',
+					selectedAuthorsQuery
+				),
 				isResolvingAuthors: core.isResolving( 'getEntityRecords', [
 					'root',
 					'user',
@@ -262,7 +265,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	const selectedAuthorsById = useMemo(
 		() =>
 			new Map(
-				selectedAuthors.map( ( author ) => [
+				( selectedAuthors || [] ).map( ( author ) => [
 					Number( author.id ),
 					author,
 				] )

@@ -134,11 +134,11 @@ export default function useNewsSectionPosts( {
 		};
 	}, [ resolvedPostIdsForQuery ] );
 
-	const { resolvedPosts, isResolvingPostData } = useSelect(
+	const { posts, isResolvingPostData } = useSelect(
 		( select ) => {
 			if ( ! postsQuery ) {
 				return {
-					resolvedPosts: [ null, null, null, null ],
+					posts: null,
 					isResolvingPostData: false,
 				};
 			}
@@ -147,24 +147,26 @@ export default function useNewsSectionPosts( {
 
 			const entityRecordsArgs = [ 'postType', 'post', postsQuery ];
 
-			const posts = core.getEntityRecords( ...entityRecordsArgs ) || [];
-
-			const postsById = new Map(
-				posts.map( ( post ) => [ Number( post.id ), post ] )
-			);
-
 			return {
-				resolvedPosts: resolvedPostIds.map( ( postId ) =>
-					postId ? postsById.get( postId ) || null : null
-				),
+				posts: core.getEntityRecords( ...entityRecordsArgs ),
 				isResolvingPostData: ! core.hasFinishedResolution(
 					'getEntityRecords',
 					entityRecordsArgs
 				),
 			};
 		},
-		[ postsQuery, resolvedPostIds ]
+		[ postsQuery ]
 	);
+
+	const resolvedPosts = useMemo( () => {
+		const postsById = new Map(
+			( posts || [] ).map( ( post ) => [ Number( post.id ), post ] )
+		);
+
+		return resolvedPostIds.map( ( postId ) =>
+			postId ? postsById.get( postId ) || null : null
+		);
+	}, [ posts, resolvedPostIds ] );
 
 	const slotSources = useMemo(
 		() =>

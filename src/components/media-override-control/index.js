@@ -65,10 +65,14 @@ export default function MediaOverrideControl( {
 			const core = select( coreStore );
 
 			return {
-				media: core.getEntityRecord( 'root', 'media', activeMediaId ),
+				media: core.getEntityRecord(
+					'postType',
+					'attachment',
+					activeMediaId
+				),
 				isResolving: core.isResolving( 'getEntityRecord', [
-					'root',
-					'media',
+					'postType',
+					'attachment',
 					activeMediaId,
 				] ),
 			};

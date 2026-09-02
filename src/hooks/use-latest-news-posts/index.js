@@ -113,11 +113,11 @@ export default function useLatestNewsPosts( {
 		};
 	}, [ resolvedPostIds ] );
 
-	const { resolvedPosts, isResolvingPostData } = useSelect(
+	const { posts, isResolvingPostData } = useSelect(
 		( select ) => {
 			if ( ! postsQuery ) {
 				return {
-					resolvedPosts: [],
+					posts: null,
 					isResolvingPostData: false,
 				};
 			}
@@ -126,24 +126,26 @@ export default function useLatestNewsPosts( {
 
 			const entityRecordsArgs = [ 'postType', 'post', postsQuery ];
 
-			const posts = core.getEntityRecords( ...entityRecordsArgs ) || [];
-
-			const postsById = new Map(
-				posts.map( ( post ) => [ Number( post.id ), post ] )
-			);
-
 			return {
-				resolvedPosts: resolvedPostIds
-					.map( ( postId ) => postsById.get( postId ) || null )
-					.filter( Boolean ),
+				posts: core.getEntityRecords( ...entityRecordsArgs ),
 				isResolvingPostData: ! core.hasFinishedResolution(
 					'getEntityRecords',
 					entityRecordsArgs
 				),
 			};
 		},
-		[ postsQuery, resolvedPostIds ]
+		[ postsQuery ]
 	);
+
+	const resolvedPosts = useMemo( () => {
+		const postsById = new Map(
+			( posts || [] ).map( ( post ) => [ Number( post.id ), post ] )
+		);
+
+		return resolvedPostIds
+			.map( ( postId ) => postsById.get( postId ) || null )
+			.filter( Boolean );
+	}, [ posts, resolvedPostIds ] );
 
 	return {
 		resolvedPostIds,
