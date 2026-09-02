@@ -2,30 +2,18 @@
 
 Plugin de blocos Gutenberg criado para estender o `wordpress-template-news`.
 
-Este plugin será responsável pelos blocos editoriais customizados usados para montar páginas flexíveis em estilo news/editorial, especialmente a Home do site.
+O plugin fornece blocos editoriais Gutenberg e controles de curadoria para estender o `wordpress-template-news` com composições personalizadas. O tema funciona de forma independente; o companion adiciona a camada opcional de controle editorial por blocos.
 
 O projeto faz parte de um estudo prático de arquitetura WordPress voltado a portais e sites editoriais, com foco em blocos dinâmicos, experiência de edição no Gutenberg, semântica, reutilização de componentes e separação clara de responsabilidades entre tema e plugin.
 
 ---
 
-## Status atual
-
-Plugin funcional com blocos editoriais dinâmicos já implementados.
-
-Blocos disponíveis:
-
--   Editorial Hero
--   Breaking News
--   News Section
--   Latest News
--   Ad Slot
--   Featured Authors
-
-Requisitos mínimos:
+## Requisitos
 
 -   WordPress 6.7+
 -   PHP 8.1+
--   Node.js compatível com `@wordpress/scripts`
+
+Node.js e npm são necessários apenas para desenvolvimento e geração local dos assets.
 
 ---
 
@@ -35,6 +23,7 @@ O tema `wordpress-template-news` é responsável por:
 
 -   templates WordPress;
 -   Template Hierarchy;
+-   Home editorial nativa e independente do plugin;
 -   estrutura visual do frontend;
 -   estilos globais do tema;
 -   `theme.json`;
@@ -54,13 +43,17 @@ Este plugin é responsável por:
 -   overrides editoriais de título, chamada e imagem;
 -   renderização dinâmica;
 -   semântica dos headings editoriais;
--   posições publicitárias manuais e AdSense;
+-   bloco Gutenberg Ad Slot, formatos publicitários e controles para anúncios manuais ou AdSense;
 -   curadoria de autores WordPress no Featured Authors;
 -   assets específicos dos blocos no editor e no frontend.
+
+O plugin não é necessário para o funcionamento básico do tema. Sem o companion, o `wordpress-template-news` continua entregando sua Home editorial, templates, navegação, busca, arquivos e componentes frontend; ficam indisponíveis apenas os blocos Gutenberg e os controles editoriais fornecidos por este plugin.
 
 Os blocos não dependem de template-parts do tema para renderizar seu conteúdo.
 
 Quando o tema fornece image sizes específicos, o plugin pode aproveitá-los. Caso contrário, utiliza tamanhos nativos do WordPress como fallback.
+
+O tema registra as áreas globais de publicidade utilizadas por seus layouts. Este plugin adiciona o bloco Gutenberg Ad Slot e os controles editoriais para preenchê-las através do editor de widgets ou para utilizar posições publicitárias em outras composições Gutenberg.
 
 A integração global com o Google AdSense, incluindo o carregamento do script global, permanece responsabilidade do site, do Site Kit ou de outra integração apropriada. O plugin é responsável apenas pelas unidades AdSense utilizadas pelo Ad Slot.
 
@@ -90,6 +83,14 @@ Blocos com seleção manual simples, como Editorial Hero e Breaking News, comuni
 
 Uma matéria só é registrada como consumida quando o bloco realmente possui condições de renderizá-la.
 
+### Resolver PHP canônico
+
+News Section e Latest News utilizam resolvers PHP canônicos para determinar os posts elegíveis no frontend.
+
+Os endpoints REST usados pelo editor reutilizam esses mesmos resolvers, mantendo seleção automática, exclusões, ordenação e deduplicação alinhadas entre Gutenberg e frontend.
+
+`resolvedPostIds` representa apenas o resultado local da resolução no editor e não substitui a configuração editorial persistida nem a resolução canônica em PHP.
+
 ---
 
 ### Overrides associados à matéria
@@ -118,7 +119,7 @@ O mesmo contrato é compartilhado pelos blocos editoriais quando aplicável.
 
 O Editorial Hero e a News Section podem utilizar título, chamada e imagem.
 
-O Breaking News utiliza a mesma estrutura, mas atualmente consome apenas `titleOverride`, porque não possui chamada ou imagem.
+O Breaking News utiliza a mesma estrutura, mas consome apenas `titleOverride`, porque não possui chamada ou imagem.
 
 O Latest News utiliza `titleOverride` e `imageOverrideId`, porque seus layouts não possuem chamada editorial.
 
@@ -131,6 +132,12 @@ Exemplos:
 -   categoria e layout da News Section;
 -   categoria, quantidade e layout do Latest News.
 
+### Tempo de leitura
+
+O plugin calcula o tempo estimado de leitura dos posts durante o salvamento e persiste o resultado em `_wtn_reading_time_minutes`.
+
+O valor é exposto pela REST API e pode ser consumido por blocos e templates sem recalcular o conteúdo durante cada renderização.
+
 ---
 
 ## Política de headings editoriais
@@ -139,7 +146,7 @@ Os blocos editoriais principais participam de uma política automática de hiera
 
 O editor não escolhe manualmente h1, h2 ou h3.
 
-Blocos candidatos atualmente:
+Blocos candidatos:
 
 -   Editorial Hero
 -   Breaking News
@@ -147,19 +154,19 @@ Blocos candidatos atualmente:
 -   Latest News
 -   Featured Authors
 
-A regra geral é:
+A hierarquia considera o contexto em que os blocos são renderizados. Quando a template já possui seu próprio `h1`, como em Single e Page, os blocos editoriais começam em `h2`. Em um contexto sem `h1` reservado pela template, o primeiro candidato editorial efetivamente renderizado pode assumir `h1` e os candidatos seguintes utilizam `h2`.
 
--   o primeiro candidato editorial principal efetivamente renderizado utiliza `h1`;
--   os candidatos principais seguintes utilizam `h2`;
--   títulos internos utilizam níveis derivados automaticamente do heading principal.
+A Home padrão do `wordpress-template-news` é renderizada pelo próprio tema e não depende destes blocos.
 
-Isso evita que a hierarquia da página dependa de uma decisão manual do editor.
+Títulos internos utilizam automaticamente o nível imediatamente abaixo do heading principal do bloco.
+
+Isso mantém a hierarquia semântica alinhada ao contexto da página sem expor essa decisão ao editor.
 
 ### News Section com título
 
 Quando a News Section possui título, o título da seção representa seu heading editorial principal.
 
-Exemplo quando é o primeiro bloco editorial:
+Exemplo quando a News Section é o primeiro candidato editorial de um contexto sem `h1` reservado pela template:
 
 ```
 H1 — Título da seção
@@ -183,7 +190,7 @@ H2 — Título da seção
 
 Quando a seção não possui título, a matéria de destaque assume o papel de heading editorial principal.
 
-Exemplo:
+Exemplo quando a News Section é o primeiro candidato editorial de um contexto sem `h1` reservado pela template:
 
 ```
 H1 — Destaque
@@ -287,6 +294,7 @@ Características:
 -   imagem destacada como fallback;
 -   imagem customizável inline;
 -   overrides associados ao ID da matéria;
+-   opção de priorizar a imagem quando o bloco estiver acima da dobra;
 -   posição da mídia à esquerda ou à direita;
 -   link automático para o post;
 -   categoria e data da matéria;
@@ -387,7 +395,7 @@ Cada post utilizado pela seção pode possuir:
 
 Os overrides são associados ao ID da matéria.
 
-Atualmente a chamada é exibida visualmente apenas na matéria de destaque.
+A chamada é exibida visualmente apenas na matéria de destaque.
 
 Se uma matéria secundária possuir um `excerptOverride`, o valor continua preservado e volta a ser utilizado caso a matéria passe a ocupar o destaque.
 
@@ -410,6 +418,8 @@ A News Section possui duas variações visuais.
 -   composição adaptada conforme a largura disponível.
 
 Os dois layouts respondem à largura real disponível no próprio bloco utilizando Container Queries, sem depender de uma composição estrutural específica da página.
+
+Quando a seção estiver acima da dobra, o editor pode priorizar a imagem da matéria de destaque. Essa configuração afeta somente a imagem principal; imagens secundárias continuam utilizando carregamento lazy.
 
 #### Estado local do editor
 
@@ -488,7 +498,7 @@ Características:
 -   não participa da seleção ou deduplicação de matérias;
 -   não participa da hierarquia de headings.
 
-Formatos disponíveis no MVP:
+Formatos disponíveis:
 
 **Horizontal**
 
@@ -553,7 +563,7 @@ Os dados editoriais do perfil pertencem ao tema e ao usuário WordPress. O bloco
 
 ## Renderização dinâmica
 
-Os seis blocos disponíveis atualmente são dinâmicos.
+Os seis blocos são dinâmicos.
 
 O conteúdo final não é salvo como HTML estático no post.
 
@@ -569,6 +579,12 @@ Nos blocos editoriais de notícias, a renderização também é responsável, qu
 No Ad Slot, a renderização decide entre anúncio Manual e unidade AdSense e não participa do contexto editorial de posts ou headings.
 
 No Featured Authors, a renderização resolve os usuários selecionados, seus dados editoriais atuais, avatar, contagem de matérias e archive individual. O bloco não participa do contexto editorial de posts.
+
+O plugin não adiciona JavaScript próprio ao frontend. O JavaScript React pertence à experiência de edição no Gutenberg.
+
+Os estilos frontend são registrados individualmente pelos blocos através de `block.json`, permitindo ao WordPress carregá-los conforme os blocos utilizados e a estratégia de assets ativa no site.
+
+Quando múltiplos posts precisam ser renderizados, caches de posts, termos, metadados e attachments relevantes são preparados em lote para evitar padrões N+1.
 
 Os arquivos dentro de `build/` são artefatos gerados e não devem ser editados manualmente.
 
@@ -639,3 +655,9 @@ Gerar o build de produção: `npm run build`
 Verificar JavaScript: `npm run lint:js`
 
 Aplicar a formatação disponibilizada pelo `@wordpress/scripts`: `npm run format`
+
+---
+
+## Licença
+
+Este plugin é distribuído sob a licença `GPL-2.0-or-later`.

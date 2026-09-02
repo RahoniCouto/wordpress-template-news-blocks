@@ -7,6 +7,8 @@
  * Requires at least: 6.7
  * Requires PHP: 8.1
  * Author: Rahoni Couto
+ * License: GPL-2.0-or-later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: wordpress-template-news-blocks
  *
  * @package WordPress_Template_News_Blocks
