@@ -10,6 +10,8 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
+const WTN_BLOCKS_MAX_EXCLUDED_POST_IDS = 100;
+
 /**
  * Checks whether a post is valid for editorial selection.
  *
@@ -79,16 +81,26 @@ function wtn_blocks_resolve_news_section_posts(
 
     $category_id = absint($category_id);
 
-    $slot_post_ids = array_slice(
-        array_pad(array_map('absint', $slot_post_ids), 4, 0),
-        0,
-        4
+    $slot_post_ids = array_pad(
+        array_map(
+            'absint',
+            array_slice($slot_post_ids, 0, 4)
+        ),
+        4,
+        0
     );
 
     $excluded_post_ids = array_values(
         array_unique(
             array_filter(
-                array_map('absint', $excluded_post_ids)
+                array_map(
+                    'absint',
+                    array_slice(
+                        $excluded_post_ids,
+                        0,
+                        WTN_BLOCKS_MAX_EXCLUDED_POST_IDS
+                    )
+                )
             )
         )
     );
@@ -208,7 +220,14 @@ function wtn_blocks_resolve_latest_news_posts(
     $excluded_post_ids = array_values(
         array_unique(
             array_filter(
-                array_map('absint', $excluded_post_ids)
+                array_map(
+                    'absint',
+                    array_slice(
+                        $excluded_post_ids,
+                        0,
+                        WTN_BLOCKS_MAX_EXCLUDED_POST_IDS
+                    )
+                )
             )
         )
     );

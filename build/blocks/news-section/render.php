@@ -46,17 +46,17 @@ $layout_variant = in_array(
 $prioritize_image = true === $block_attributes['prioritizeImage'];
 
 $slot_post_ids = is_array($block_attributes['slotPostIds'])
-    ? array_slice(
-        array_pad(
-            array_map(
-                'absint',
-                $block_attributes['slotPostIds']
-            ),
-            4,
-            0
+    ? array_pad(
+        array_map(
+            'absint',
+            array_slice(
+                $block_attributes['slotPostIds'],
+                0,
+                4
+            )
         ),
-        0,
-        4
+        4,
+        0
     )
     : [0, 0, 0, 0];
 
@@ -73,17 +73,13 @@ $resolved_post_ids = wtn_blocks_resolve_news_section_posts(
     $excluded_post_ids
 );
 
-$resolved_post_ids = array_slice(
-    array_pad(
-        array_map(
-            'absint',
-            $resolved_post_ids
-        ),
-        4,
-        0
+$resolved_post_ids = array_pad(
+    array_map(
+        'absint',
+        array_slice($resolved_post_ids, 0, 4)
     ),
-    0,
-    4
+    4,
+    0
 );
 
 $featured_post_id = $resolved_post_ids[0];

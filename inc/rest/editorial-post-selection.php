@@ -89,17 +89,19 @@ function wtn_blocks_register_editorial_post_selection_routes(): void
                     'default' => 0,
                 ],
                 'slotPostIds' => [
-                    'type'    => 'array',
-                    'default' => [0, 0, 0, 0],
-                    'items'   => [
+                    'type'     => 'array',
+                    'maxItems' => 4,
+                    'default'  => [0, 0, 0, 0],
+                    'items'    => [
                         'type'    => 'integer',
                         'minimum' => 0,
                     ],
                 ],
                 'excludedPostIds' => [
-                    'type'    => 'array',
-                    'default' => [],
-                    'items'   => [
+                    'type'     => 'array',
+                    'maxItems' => WTN_BLOCKS_MAX_EXCLUDED_POST_IDS,
+                    'default'  => [],
+                    'items'    => [
                         'type'    => 'integer',
                         'minimum' => 0,
                     ],
@@ -127,9 +129,10 @@ function wtn_blocks_register_editorial_post_selection_routes(): void
                     'default' => 4,
                 ],
                 'excludedPostIds' => [
-                    'type'    => 'array',
-                    'default' => [],
-                    'items'   => [
+                    'type'     => 'array',
+                    'maxItems' => WTN_BLOCKS_MAX_EXCLUDED_POST_IDS,
+                    'default'  => [],
+                    'items'    => [
                         'type'    => 'integer',
                         'minimum' => 0,
                     ],
