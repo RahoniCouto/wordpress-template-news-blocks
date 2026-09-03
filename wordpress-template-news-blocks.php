@@ -3,7 +3,7 @@
 /**
  * Plugin Name: WordPress Template News Blocks
  * Description: Blocos Gutenberg editoriais para o tema WordPress Template News.
- * Version: 0.1.0
+ * Version: 1.0.0
  * Requires at least: 6.7
  * Requires PHP: 8.1
  * Author: Rahoni Couto

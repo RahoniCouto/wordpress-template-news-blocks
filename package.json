@@ -1,6 +1,6 @@
 {
 	"name": "wordpress-template-news-blocks",
-	"version": "0.1.0",
+	"version": "1.0.0",
 	"description": "Gutenberg blocks plugin criado para usar em conjunto com o template wordpress-template-news.",
 	"private": true,
 	"license": "GPL-2.0-or-later",
