@@ -1,8 +1,8 @@
 # WordPress Template News Blocks
 
-Plugin de blocos Gutenberg criado para estender o `wordpress-template-news`.
+Companion plugin do WordPress Template News responsável pelos blocos Gutenberg e pelo domínio editorial WTN compartilhado pelo CMS.
 
-O plugin fornece blocos editoriais Gutenberg e controles de curadoria para estender o `wordpress-template-news` com composições personalizadas. O tema funciona de forma independente; o companion adiciona a camada opcional de controle editorial por blocos.
+Na arquitetura V2 Headless, o plugin concentra regras e dados editoriais que precisam sobreviver independentemente do frontend PHP clássico, incluindo seleção de conteúdo, autores editoriais, tempo de leitura e image sizes consumidos pelos blocos.
 
 O projeto faz parte de um estudo prático de arquitetura WordPress voltado a portais e sites editoriais, com foco em blocos dinâmicos, experiência de edição no Gutenberg, semântica, reutilização de componentes e separação clara de responsabilidades entre tema e plugin.
 
@@ -19,18 +19,14 @@ Node.js e npm são necessários apenas para desenvolvimento e geração local do
 
 ## Fronteira de responsabilidade
 
-O tema `wordpress-template-news` é responsável por:
+O tema `wordpress-template-news` permanece responsável pelas capacidades ligadas ao CMS e à experiência Gutenberg, como:
 
--   templates WordPress;
--   Template Hierarchy;
--   Home editorial nativa e independente do plugin;
--   estrutura visual do frontend;
--   estilos globais do tema;
 -   `theme.json`;
--   estilos base do editor;
--   suporte ao conteúdo Gutenberg nativo;
--   image sizes específicos quando disponíveis;
--   dados editoriais do perfil de autores utilizados pelos templates e blocos.
+-   editor styles;
+-   theme supports editoriais;
+-   variações de Core blocks;
+-   localizações de menus;
+-   custom logo.
 
 Este plugin é responsável por:
 
@@ -41,17 +37,18 @@ Este plugin é responsável por:
 -   resolução automática ou manual de conteúdo;
 -   prevenção de repetição de matérias entre blocos editoriais;
 -   overrides editoriais de título, chamada e imagem;
--   renderização dinâmica;
--   semântica dos headings editoriais;
+-   renderização dinâmica atual dos blocos;
+-   semântica de headings usada pelo renderer PHP clássico enquanto ele existir;
 -   bloco Gutenberg Ad Slot, formatos publicitários e controles para anúncios manuais ou AdSense;
--   curadoria de autores WordPress no Featured Authors;
--   assets específicos dos blocos no editor e no frontend.
+-   dados e administração editorial dos autores WordPress;
+-   curadoria de autores no Featured Authors;
+-   cálculo e persistência do tempo de leitura;
+-   image sizes `wtn-featured`, `wtn-card` e `wtn-avatar`;
+-   assets específicos dos blocos e das capacidades administrativas pertencentes ao plugin.
 
-O plugin não é necessário para o funcionamento básico do tema. Sem o companion, o `wordpress-template-news` continua entregando sua Home editorial, templates, navegação, busca, arquivos e componentes frontend; ficam indisponíveis apenas os blocos Gutenberg e os controles editoriais fornecidos por este plugin.
+Na V2, o companion faz parte da arquitetura estrutural do CMS e não é tratado como extensão opcional do frontend clássico. Os templates PHP que ainda existem no tema são referência comportamental durante a migração; o frontend público final pertence ao projeto Next.js.
 
-Os blocos não dependem de template-parts do tema para renderizar seu conteúdo.
-
-Quando o tema fornece image sizes específicos, o plugin pode aproveitá-los. Caso contrário, utiliza tamanhos nativos do WordPress como fallback.
+Os blocos não dependem de template-parts do tema para renderizar seu conteúdo. Os image sizes WTN são registrados pelo próprio plugin; os fallbacks para tamanhos nativos do WordPress permanecem como proteção dos renderers atuais.
 
 O tema registra as áreas globais de publicidade utilizadas por seus layouts. Este plugin adiciona o bloco Gutenberg Ad Slot e os controles editoriais para preenchê-las através do editor de widgets ou para utilizar posições publicitárias em outras composições Gutenberg.
 
@@ -557,7 +554,7 @@ Características:
 
 O Featured Authors não cria CPT, sistema próprio de usuários, ranking de autores ou contexto global de deduplicação entre blocos de autores.
 
-Os dados editoriais do perfil pertencem ao tema e ao usuário WordPress. O bloco persiste apenas a configuração editorial da ocorrência, como IDs selecionados, quantidade, título e link `Ver todas`. Nome, foto, cargo, archive e contagem de matérias são resolvidos dinamicamente.
+Os dados editoriais do perfil pertencem ao companion plugin e ao usuário WordPress. O bloco persiste apenas a configuração editorial da ocorrência, como IDs selecionados, quantidade, título e link `Ver todas`. Nome, foto, cargo, archive e contagem de matérias são resolvidos dinamicamente.
 
 ---
 
