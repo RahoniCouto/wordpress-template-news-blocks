@@ -199,19 +199,9 @@ $get_author_render_data = static function (int $author_id) use (
         return null;
     }
 
-    $editorial_role = function_exists('wtn_get_author_editorial_role_label')
-        ? wtn_get_author_editorial_role_label($author_id)
-        : get_user_meta(
-            $author_id,
-            'wtn_author_editorial_role',
-            true
-        );
-
     $editorial_role = trim(
         wp_strip_all_tags(
-            is_string($editorial_role)
-                ? $editorial_role
-                : ''
+            wtn_get_author_editorial_role_label($author_id)
         )
     );
 
@@ -219,10 +209,12 @@ $get_author_render_data = static function (int $author_id) use (
         ? 'wtn-avatar'
         : 'thumbnail';
 
-    $avatar_html = function_exists('wtn_get_author_photo_html')
-        ? wtn_get_author_photo_html(
-            $author_id,
+    $photo_id = wtn_get_author_photo_id($author_id);
+    $avatar_html = 0 !== $photo_id
+        ? (string) wp_get_attachment_image(
+            $photo_id,
             $avatar_image_size,
+            false,
             [
                 'class'    => 'wtn-blocks-featured-authors__avatar-image',
                 'loading'  => 'lazy',

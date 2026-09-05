@@ -1,13 +1,23 @@
 <?php
 
 /**
- * Media helpers.
+ * Media helpers and image sizes.
  *
  * @package WordPress_Template_News_Blocks
  */
 
 if (! defined('ABSPATH')) {
     exit;
+}
+
+/**
+ * Registers image sizes used by the editorial blocks and author profile.
+ */
+function wtn_blocks_register_image_sizes(): void
+{
+    add_image_size('wtn-featured', 1280, 720, true);
+    add_image_size('wtn-card', 768, 432, true);
+    add_image_size('wtn-avatar', 192, 192, true);
 }
 
 /**

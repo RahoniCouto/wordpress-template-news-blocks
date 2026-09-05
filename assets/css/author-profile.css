@@ -1,0 +1,29 @@
+.wtn-media-field {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.wtn-media-field__preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 9rem;
+  min-height: 9rem;
+  background: #f6f7f7;
+  border: 1px solid #dcdcde;
+  border-radius: 0.5rem;
+}
+
+.wtn-media-field__image {
+  display: block;
+  width: 9rem;
+  height: 9rem;
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+
+.wtn-media-field__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
